@@ -1,0 +1,20 @@
+{
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true,
+    "source.fixAll": true
+  },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "/manifest.json"
+      ],
+      "url": "http://json.schemastore.org/chrome-manifest"
+    }
+  ]
+}

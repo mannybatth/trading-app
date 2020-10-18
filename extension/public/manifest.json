@@ -1,0 +1,41 @@
+{
+  "manifest_version": 2,
+  "name": "Trader App",
+  "description": "Trader App for Discord",
+  "version": "1.0",
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
+  },
+  "browser_action": {
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.discord.com/*"
+      ],
+      "js": [
+        "js/vendor.js",
+        "js/content_script.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "scripts": [
+      "js/vendor.js",
+      "js/background.js"
+    ],
+    "persistent": true
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "webNavigation",
+    "tabs",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ]
+}
