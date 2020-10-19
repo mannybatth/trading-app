@@ -6,11 +6,12 @@ import { ChatMessage } from './models/models';
 const onNewMessage = (message: ChatMessage) => {
   const alert = parseAlert(message.text);
   if (alert) {
+    console.log(message, alert);
     sendAlertMessage(message, alert);
   }
 };
 
-const watcher = new MessageWatcher(onNewMessage, { onlyNewMessages: false, watchForXtradeIcon: false });
+const watcher = new MessageWatcher(onNewMessage);
 
 try {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

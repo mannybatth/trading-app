@@ -1,6 +1,7 @@
 export interface ChatMessage {
   username: string;
   text: string;
+  discriminator: string;
   element: {
     id: string;
     hasXtradeIcon: boolean;
@@ -21,5 +22,6 @@ export interface RuntimeMessage<T> {
 
 export interface RuntimeAlertMessage {
   username: string;
+  discriminator: string;
   alert: Alert;
 }

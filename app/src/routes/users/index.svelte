@@ -153,35 +153,11 @@
   </Actions>
 </Dialog>
 
-<Snackbar bind:this="{usersUpdatedSnackbarRef}">
-  <Label>Users updated! Count: {usersUpdatedList.length}</Label>
-</Snackbar>
-
-<script context="module">
-  // // the (optional) preload function takes a
-  // // `{ path, params, query }` object and turns it into
-  // // the data we need to render the page
-  // export async function preload(page, session) {
-  // 	// the `slug` parameter is available because this file
-  // 	// is called [slug].svelte
-  // 	const { slug } = page.params;
-
-  // 	// `this.fetch` is a wrapper around `fetch` that allows
-  // 	// you to make credentialled requests on both
-  // 	// server and client
-  // 	const res = await this.fetch(`blog/${slug}.json`);
-  // 	const article = await res.json();
-
-  // 	return { article };
-  // }
-</script>
-
 <script>
   import Button, { Label } from "@smui/button";
   import DataTable, { Body, Cell, Head, Row } from "@smui/data-table";
   import Dialog, { Actions, Content, Title } from "@smui/dialog";
   import IconButton from "@smui/icon-button";
-  import Snackbar from "@smui/snackbar";
   import Textfield from "@smui/textfield";
   import { Collection } from "sveltefire";
   import { API_URL } from "../../constants";
@@ -199,7 +175,6 @@
   let editMode = false;
 
   let bulkUpdateText = "";
-  let usersUpdatedSnackbarRef;
   let usersUpdatedList = [];
 
   function resetUser() {
@@ -249,7 +224,7 @@
 
     if (json && json.success) {
       usersUpdatedList = json.usersChanged || [];
-      usersUpdatedSnackbarRef.open();
+      alert(`Users updated! Count: ${usersUpdatedList.length}`);
     }
   }
 </script>

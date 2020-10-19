@@ -6,12 +6,19 @@ export interface MessageWatcherConfig {
   onlyNewMessages?: boolean
 }
 
+const containsXtradeIcon = (node: HTMLElement): boolean => {
+  const reactionsDiv = node.querySelector('[class*="reactions-"]');
+  return reactionsDiv?.querySelector('img[alt="Xtrades"]') ? true : false;
+}
+
 export class MessageWatcher {
   private bodyObserver: MutationObserver;
   private chatObserver: MutationObserver;
 
   private chatMessagesElement: HTMLElement;
   private config: MessageWatcherConfig;
+
+  private queue = new MessageQueue();
 
   constructor(
     public callback: (message: ChatMessage) => void,
@@ -25,6 +32,7 @@ export class MessageWatcher {
         onlyNewMessages: true
       }
   ) {
+    this.queue.callback = callback;
     this.config = {
       watchForXtradeIcon,
       iconWaitTime,
@@ -81,7 +89,7 @@ export class MessageWatcher {
     this.chatObserver = new MutationObserver((mutationsList, observer) => {
       // console.log('mutationsList', mutationsList);
       mutationsList.forEach((mutation) => {
-        mutation.addedNodes.forEach((node: HTMLElement) => {
+        mutation.addedNodes.forEach(async (node: HTMLElement) => {
           if (!node?.id?.includes('chat-messages')) {
             return;
           }
@@ -89,10 +97,7 @@ export class MessageWatcher {
           if (this.config.watchForXtradeIcon) {
             this.watchMessageForXtradeIcon(node);
           } else {
-            const message = this.buildMessageFromNode(node);
-            if (message.username && message.text) {
-              this.callback(message);
-            }
+            this.queue.addTask(node);
           }
         })
       })
@@ -100,53 +105,107 @@ export class MessageWatcher {
     this.chatObserver.observe(this.chatMessagesElement, { attributes: false, childList: true, subtree: true });
   }
 
-  private watchMessageForXtradeIcon(messageNode: HTMLElement) {
+  private async watchMessageForXtradeIcon(messageNode: HTMLElement) {
+    const foundNode = await waitForElementToBeVisible((node) => {
+      return containsXtradeIcon(node);
+    }, messageNode, this.config.iconWaitTime);
+
+    if (foundNode) {
+      this.queue.addTask(messageNode);
+    }
+  }
+}
+
+function waitForElementToBeVisible(
+  condition: (node: HTMLElement) => boolean,
+  inParent = document.documentElement || document.body,
+  waitTime = 3000
+): Promise<HTMLElement | null> {
+  return new Promise((resolve, reject) => {
+
+    if (condition(inParent)) {
+      resolve(inParent);
+      return;
+    }
+
     let timeout: NodeJS.Timeout;
     const messageObserver = new MutationObserver((mutationsList, observer) => {
       mutationsList.forEach((mutation) => {
         mutation.addedNodes.forEach((node: HTMLElement) => {
-          if (this.containsXtradeIcon(messageNode)) {
+          if (condition(node)) {
             observer.disconnect();
+            resolve(node);
 
             if (timeout) {
               clearTimeout(timeout);
               timeout = null;
             }
-
-            const message = this.buildMessageFromNode(messageNode);
-            if (message.username && message.text) {
-              this.callback(message);
-            }
           }
         });
       });
     });
-    messageObserver.observe(messageNode, { attributes: false, childList: true, subtree: true });
+    messageObserver.observe(inParent, { attributes: false, childList: true, subtree: true });
 
     timeout = setTimeout(() => {
       messageObserver.disconnect();
-    }, this.config.iconWaitTime);
-  }
+      resolve(null);
+    }, waitTime);
+  });
+}
 
-  private containsXtradeIcon(node: HTMLElement): boolean {
-    const reactionsDiv = node.querySelector('[class*="reactions-"]');
-    return reactionsDiv?.querySelector('img[alt="Xtrades"]') ? true : false;
-  }
+class MessageQueue {
+  public callback: (message: ChatMessage) => void;
 
-  private buildMessageFromNode(node: HTMLElement) {
-    const usernameSpan = node.querySelector('[class*="username-"]');
+  public addTask = (() => {
+    let pending: Promise<ChatMessage | null> = Promise.resolve(null);
+
+    const run = async (node: HTMLElement) => {
+      try {
+        await pending;
+      } finally {
+        return this.buildMessageFromNode(node);
+      }
+    }
+
+    // update pending promise so that next task could await for it
+    return (node: HTMLElement) => (pending = run(node))
+  })();
+
+  private async buildMessageFromNode(node: HTMLElement): Promise<ChatMessage | null> {
+    const usernameSpan: HTMLElement = node.querySelector('[class*="username-"]');
     const textDiv = node.querySelector('[class*="messageContent-"]');
     textDiv?.querySelector("blockquote")?.remove();
     const username = usernameSpan?.textContent;
     const text = textDiv?.textContent?.trim();
 
-    return {
+    usernameSpan.click();
+
+    const foundNode = await waitForElementToBeVisible((ele) => {
+      const result = ele.querySelector('[class*="userPopout-"]');
+      return result !== undefined && result !== null;
+    });
+
+    if (!foundNode) {
+      return null;
+    }
+
+    const userPopout = foundNode.querySelector('[class*="userPopout-"]');
+    const headerTag = userPopout.querySelector('[class*="headerTag-"]');
+    const headerTagSplits = headerTag.textContent.split('#');
+    const discriminator = headerTagSplits[headerTagSplits.length - 1];
+
+    usernameSpan.click();
+
+    const message: ChatMessage = {
       username,
+      discriminator,
       text,
       element: {
         id: node.id,
-        hasXtradeIcon: this.containsXtradeIcon(node)
+        hasXtradeIcon: containsXtradeIcon(node)
       }
     };
+    this.callback(message);
+    return message;
   }
 }

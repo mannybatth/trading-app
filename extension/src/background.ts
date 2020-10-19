@@ -11,7 +11,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onMessage.addListener((message: RuntimeMessage<any>) => {
   if (message.name === "alert") {
     const alertMessage = message as RuntimeMessage<RuntimeAlertMessage>;
-    console.log('chrome.runtime.onMessage.addListener', alertMessage.data.alert);
+    console.log('chrome.runtime.onMessage.addListener', alertMessage.data);
 
     fetch(`${API_URL}/alert.endpoint`, {
       method: 'POST',

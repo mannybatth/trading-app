@@ -55,12 +55,6 @@
     </li>
     <li>
       <a
-        aria-current="{segment === 'about' ? 'page' : undefined}"
-        href="about"
-      >about</a>
-    </li>
-    <li>
-      <a
         aria-current="{segment === 'users' ? 'page' : undefined}"
         href="users"
       >users</a>

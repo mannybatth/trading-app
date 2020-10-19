@@ -5,6 +5,7 @@ export const sendAlertMessage = (message: ChatMessage, alert: Alert) => {
     name: "alert",
     data: {
       username: message.username,
+      discriminator: message.discriminator,
       alert
     }
   };
