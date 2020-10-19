@@ -1,3 +1,4 @@
+import allowedTraders from "./allowed-traders";
 import { RuntimeAlertMessage, RuntimeMessage } from "./models/models";
 
 const API_URL = 'http://localhost:3000';
@@ -12,6 +13,11 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage<any>) => {
   if (message.name === "alert") {
     const alertMessage = message as RuntimeMessage<RuntimeAlertMessage>;
     console.log('chrome.runtime.onMessage.addListener', alertMessage.data);
+
+    const discriminator = alertMessage.data?.discriminator;
+    if (!allowedTraders.includes(discriminator)) {
+      return;
+    }
 
     fetch(`${API_URL}/alert.endpoint`, {
       method: 'POST',

@@ -2,6 +2,7 @@ export interface ChatMessage {
   username: string;
   text: string;
   discriminator: string;
+  alert: Alert;
   element: {
     id: string;
     hasXtradeIcon: boolean;

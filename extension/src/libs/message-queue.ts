@@ -1,5 +1,6 @@
 import { ChatMessage } from "../models/models";
 import { containsXtradeIcon, waitForElementToBeVisible } from "./helpers";
+import { parseAlert } from "./signal-parser";
 
 export class MessageQueue {
   public callback: (message: ChatMessage) => void;
@@ -26,6 +27,11 @@ export class MessageQueue {
     const username = usernameSpan?.textContent;
     const text = textDiv?.textContent?.trim();
 
+    const alert = parseAlert(text);
+    if (!alert) {
+      return null;
+    }
+
     usernameSpan.click();
 
     const foundNode = await waitForElementToBeVisible((ele) => {
@@ -48,6 +54,7 @@ export class MessageQueue {
       username,
       discriminator,
       text,
+      alert,
       element: {
         id: node.id,
         hasXtradeIcon: containsXtradeIcon(node)

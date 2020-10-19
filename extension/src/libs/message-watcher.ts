@@ -11,8 +11,8 @@ export interface MessageWatcherConfig {
 export class MessageWatcher {
   private bodyObserver: MutationObserver;
   private chatObserver: MutationObserver;
+  private lastMessageId: number;
 
-  private chatMessagesElement: HTMLElement;
   private config: MessageWatcherConfig;
 
   private queue = new MessageQueue();
@@ -39,7 +39,7 @@ export class MessageWatcher {
   }
 
   public reload() {
-    this.chatMessagesElement = null;
+    this.lastMessageId = undefined;
     this.stop();
     this.start();
   }
@@ -57,13 +57,7 @@ export class MessageWatcher {
   }
 
   private start() {
-    if (this.config.onlyNewMessages) {
-      setTimeout(() => {
-        this.watchForChannel();
-      }, 3000);
-    } else {
-      this.watchForChannel();
-    }
+    this.watchForChannel();
   }
 
   private watchForChannel() {
@@ -73,23 +67,38 @@ export class MessageWatcher {
     this.bodyObserver = new MutationObserver((mutationsList, observer) => {
       const chatMessagesElement = document.getElementById('chat-messages');
       if (chatMessagesElement) {
-        this.chatMessagesElement = chatMessagesElement;
-        this.watchChatMessages();
+        this.watchChatMessages(chatMessagesElement);
       }
     });
     this.bodyObserver.observe(body, { attributes: false, childList: true, subtree: true });
   }
 
-  private watchChatMessages() {
+  private async watchChatMessages(chatMessagesElement: HTMLElement) {
     this.stop();
 
+    if (this.config.onlyNewMessages) {
+      await waitForElementToBeVisible((node: HTMLElement) => {
+        return chatMessagesElement.querySelector('[id*="---new-messages-bar"]') ? true : false;
+      }, chatMessagesElement);
+    }
+
     this.chatObserver = new MutationObserver((mutationsList, observer) => {
-      // console.log('mutationsList', mutationsList);
       mutationsList.forEach((mutation) => {
         mutation.addedNodes.forEach(async (node: HTMLElement) => {
           if (!node?.id?.includes('chat-messages')) {
             return;
           }
+
+          const nodeIdSplits = node?.id.split("-");
+          const messageIdStr = nodeIdSplits[nodeIdSplits.length - 1];
+          const messageId = messageIdStr && parseInt(messageIdStr);
+
+          if (!messageId || (this.lastMessageId && messageId < this.lastMessageId)) {
+            // must be a old message
+            return;
+          }
+
+          this.lastMessageId = messageId;
 
           if (this.config.waitForXtradeIcon) {
             this.watchMessageForXtradeIcon(node);
@@ -99,13 +108,13 @@ export class MessageWatcher {
         })
       })
     });
-    this.chatObserver.observe(this.chatMessagesElement, { attributes: false, childList: true, subtree: true });
+    this.chatObserver.observe(chatMessagesElement, { attributes: false, childList: true, subtree: true });
   }
 
   private async watchMessageForXtradeIcon(messageNode: HTMLElement) {
     const foundNode = await waitForElementToBeVisible((node) => {
       return containsXtradeIcon(messageNode);
-    }, messageNode, this.config.iconWaitTime);
+    }, messageNode, true, this.config.iconWaitTime);
 
     if (foundNode) {
       this.queue.addTask(messageNode);

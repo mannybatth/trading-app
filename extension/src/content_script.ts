@@ -1,13 +1,11 @@
 import { sendAlertMessage } from './libs/communication';
 import { MessageWatcher } from './libs/message-watcher';
-import { parseAlert } from './libs/signal-parser';
 import { ChatMessage } from './models/models';
 
 const onNewMessage = (message: ChatMessage) => {
-  const alert = parseAlert(message.text);
-  if (alert) {
-    console.log(message, alert);
-    sendAlertMessage(message, alert);
+  if (message?.alert) {
+    console.log(message);
+    sendAlertMessage(message);
   }
 };
 
