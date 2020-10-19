@@ -3,7 +3,7 @@
   "description": "TODO",
   "version": "0.0.1",
   "scripts": {
-    "dev": "sapper dev",
+    "dev": "sapper dev --no-hot",
     "build": "sapper build",
     "export": "sapper export",
     "start": "node __sapper__/build",
@@ -16,6 +16,7 @@
   "dependencies": {
     "compression": "^1.7.1",
     "firebase": "^7.24.0",
+    "firebase-admin": "^9.2.0",
     "polka": "next",
     "sirv": "^1.0.0"
   },

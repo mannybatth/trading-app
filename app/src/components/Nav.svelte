@@ -1,7 +1,3 @@
-<script>
-  export let segment;
-</script>
-
 <style>
   nav {
     border-bottom: 1px solid rgba(255, 62, 0, 0.1);
@@ -53,18 +49,31 @@
   <ul>
     <li>
       <a
-        aria-current={segment === undefined ? 'page' : undefined}
-        href=".">home</a>
+        aria-current="{segment === undefined ? 'page' : undefined}"
+        href="."
+      >home</a>
     </li>
     <li>
       <a
-        aria-current={segment === 'about' ? 'page' : undefined}
-        href="about">about</a>
+        aria-current="{segment === 'about' ? 'page' : undefined}"
+        href="about"
+      >about</a>
     </li>
     <li>
       <a
-        aria-current={segment === 'users' ? 'page' : undefined}
-        href="users">users</a>
+        aria-current="{segment === 'users' ? 'page' : undefined}"
+        href="users"
+      >users</a>
+    </li>
+    <li>
+      <a
+        aria-current="{segment === 'username-changes' ? 'page' : undefined}"
+        href="username-changes"
+      >username changes</a>
     </li>
   </ul>
 </nav>
+
+<script>
+  export let segment;
+</script>

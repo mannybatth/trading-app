@@ -13,12 +13,12 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage<any>) => {
     const alertMessage = message as RuntimeMessage<RuntimeAlertMessage>;
     console.log('chrome.runtime.onMessage.addListener', alertMessage.data.alert);
 
-    fetch(`${API_URL}/alert`, {
+    fetch(`${API_URL}/alert.endpoint`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(alertMessage),
+      body: JSON.stringify(alertMessage.data),
     })
   }
 });
