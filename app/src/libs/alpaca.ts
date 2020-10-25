@@ -17,6 +17,8 @@ const calcQuantity = (price) => {
 }
 
 export class AlpacaClient {
+  public client: Alpaca;
+
   init() {
     this.client = new Alpaca({
       keyId: 'PKL7QOHWIBC4LISNDKKQ',

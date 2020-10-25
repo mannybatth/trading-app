@@ -26,19 +26,19 @@ module.exports = {
     output: config.client.output(),
     resolve: { alias, extensions, mainFields },
     module: {
-			rules: [
-				{
-					test: /\.ts$/,
-					loader: 'ts-loader'
-				},
-				{
+      rules: [
+        {
+          test: /\.ts$/,
+          loader: 'ts-loader'
+        },
+        {
           test: /\.(svelte|html)$/,
           use: {
             loader: 'svelte-loader',
             options: {
               dev,
               hydratable: true,
-							preprocess: sveltePreprocess(),
+              preprocess: sveltePreprocess(),
               hotReload: false // pending https://github.com/sveltejs/svelte/issues/2377
             }
           }
@@ -96,12 +96,12 @@ module.exports = {
     resolve: { alias, extensions, mainFields },
     externals: Object.keys(pkg.dependencies).concat('encoding'),
     module: {
-			rules: [
-				{
-					test: /\.ts$/,
-					loader: 'ts-loader'
-				},
-				{
+      rules: [
+        {
+          test: /\.ts$/,
+          loader: 'ts-loader'
+        },
+        {
           test: /\.(svelte|html)$/,
           use: {
             loader: 'svelte-loader',
@@ -109,7 +109,7 @@ module.exports = {
               css: false,
               generate: 'ssr',
               hydratable: true,
-							preprocess: sveltePreprocess(),
+              preprocess: sveltePreprocess(),
               dev
             }
           }
@@ -160,15 +160,15 @@ module.exports = {
   serviceworker: {
     entry: { 'service-worker': config.serviceworker.entry()['service-worker'].replace(/\.js$/, '.ts') },
     output: config.serviceworker.output(),
-		resolve: { extensions: ['.mjs', '.js', '.ts', '.json'] },
-		module: {
-			rules: [
-				{
-					test: /\.ts$/,
-					loader: 'ts-loader'
-				}
-			]
-		},
-		mode
+    resolve: { extensions: ['.mjs', '.js', '.ts', '.json'] },
+    module: {
+      rules: [
+        {
+          test: /\.ts$/,
+          loader: 'ts-loader'
+        }
+      ]
+    },
+    mode
   }
 };

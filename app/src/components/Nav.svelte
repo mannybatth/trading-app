@@ -69,5 +69,5 @@
 </nav>
 
 <script lang="ts">
-  export let segment: string;
+  let segment: string;
 </script>
