@@ -18,4 +18,4 @@ try {
     }
     sendResponse(true);
   });
-} catch (error) { }
+} catch (error) {}

@@ -6,14 +6,16 @@
     "source.organizeImports": true,
     "source.fixAll": true
   },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "typescript.tsdk": "./node_modules/typescript/lib",
   "json.schemas": [
     {
-      "fileMatch": [
-        "/manifest.json"
-      ],
+      "fileMatch": ["/manifest.json"],
       "url": "http://json.schemastore.org/chrome-manifest"
     }
   ]

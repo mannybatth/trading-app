@@ -1,6 +1,6 @@
-import { ChatMessage } from "../models/models";
-import { containsXtradeIcon, waitForElementToBeVisible } from "./helpers";
-import { parseAlert } from "./signal-parser";
+import { ChatMessage } from '../models/models';
+import { containsXtradeIcon, waitForElementToBeVisible } from './helpers';
+import { parseAlert } from './signal-parser';
 
 export class MessageQueue {
   public callback: (message: ChatMessage) => void;
@@ -14,16 +14,20 @@ export class MessageQueue {
       } finally {
         return this.buildMessageFromNode(node);
       }
-    }
+    };
 
     // update pending promise so that next task could await for it
-    return (node: HTMLElement) => (pending = run(node))
+    return (node: HTMLElement) => (pending = run(node));
   })();
 
-  private async buildMessageFromNode(node: HTMLElement): Promise<ChatMessage | null> {
-    const usernameSpan: HTMLElement = node.querySelector('[class*="username-"]');
+  private async buildMessageFromNode(
+    node: HTMLElement
+  ): Promise<ChatMessage | null> {
+    const usernameSpan: HTMLElement = node.querySelector(
+      '[class*="username-"]'
+    );
     const textDiv = node.querySelector('[class*="messageContent-"]');
-    textDiv?.querySelector("blockquote")?.remove();
+    textDiv?.querySelector('blockquote')?.remove();
     const username = usernameSpan?.textContent;
     const text = textDiv?.textContent;
 
@@ -57,8 +61,8 @@ export class MessageQueue {
       alert,
       element: {
         id: node.id,
-        hasXtradeIcon: containsXtradeIcon(node)
-      }
+        hasXtradeIcon: containsXtradeIcon(node),
+      },
     };
     this.callback(message);
     return message;

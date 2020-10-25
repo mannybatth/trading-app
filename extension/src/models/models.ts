@@ -6,7 +6,7 @@ export interface ChatMessage {
   element: {
     id: string;
     hasXtradeIcon: boolean;
-  }
+  };
 }
 
 export interface Alert {

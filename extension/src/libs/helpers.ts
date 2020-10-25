@@ -5,7 +5,6 @@ export function waitForElementToBeVisible(
   waitTime = 3000
 ): Promise<HTMLElement | null> {
   return new Promise((resolve, reject) => {
-
     if (condition(inParent)) {
       resolve(inParent);
       return;
@@ -27,7 +26,11 @@ export function waitForElementToBeVisible(
         });
       });
     });
-    messageObserver.observe(inParent, { attributes: false, childList: true, subtree: true });
+    messageObserver.observe(inParent, {
+      attributes: false,
+      childList: true,
+      subtree: true,
+    });
 
     if (useTimeout) {
       timeout = setTimeout(() => {

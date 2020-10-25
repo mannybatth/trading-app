@@ -1,11 +1,11 @@
-import { ChatMessage } from "../models/models";
-import { containsXtradeIcon, waitForElementToBeVisible } from "./helpers";
-import { MessageQueue } from "./message-queue";
+import { ChatMessage } from '../models/models';
+import { containsXtradeIcon, waitForElementToBeVisible } from './helpers';
+import { MessageQueue } from './message-queue';
 
 export interface MessageWatcherConfig {
-  waitForXtradeIcon?: boolean,
-  iconWaitTime?: number,
-  onlyNewMessages?: boolean
+  waitForXtradeIcon?: boolean;
+  iconWaitTime?: number;
+  onlyNewMessages?: boolean;
 }
 
 export class MessageWatcher {
@@ -22,18 +22,18 @@ export class MessageWatcher {
     {
       waitForXtradeIcon = true,
       iconWaitTime = 7000,
-      onlyNewMessages = true
+      onlyNewMessages = true,
     }: MessageWatcherConfig = {
-        waitForXtradeIcon: true,
-        iconWaitTime: 7000,
-        onlyNewMessages: true
-      }
+      waitForXtradeIcon: true,
+      iconWaitTime: 7000,
+      onlyNewMessages: true,
+    }
   ) {
     this.queue.callback = callback;
     this.config = {
       waitForXtradeIcon,
       iconWaitTime,
-      onlyNewMessages
+      onlyNewMessages,
     };
     this.start();
   }
@@ -70,7 +70,11 @@ export class MessageWatcher {
         this.watchChatMessages(chatMessagesElement);
       }
     });
-    this.bodyObserver.observe(body, { attributes: false, childList: true, subtree: true });
+    this.bodyObserver.observe(body, {
+      attributes: false,
+      childList: true,
+      subtree: true,
+    });
   }
 
   private async watchChatMessages(chatMessagesElement: HTMLElement) {
@@ -78,7 +82,9 @@ export class MessageWatcher {
 
     if (this.config.onlyNewMessages) {
       await waitForElementToBeVisible((node: HTMLElement) => {
-        return chatMessagesElement.querySelector('[id*="---new-messages-bar"]') ? true : false;
+        return chatMessagesElement.querySelector('[id*="---new-messages-bar"]')
+          ? true
+          : false;
       }, chatMessagesElement);
     }
 
@@ -89,11 +95,14 @@ export class MessageWatcher {
             return;
           }
 
-          const nodeIdSplits = node?.id.split("-");
+          const nodeIdSplits = node?.id.split('-');
           const messageIdStr = nodeIdSplits[nodeIdSplits.length - 1];
           const messageId = messageIdStr && parseInt(messageIdStr);
 
-          if (!messageId || (this.lastMessageId && messageId < this.lastMessageId)) {
+          if (
+            !messageId ||
+            (this.lastMessageId && messageId < this.lastMessageId)
+          ) {
             // must be a old message
             return;
           }
@@ -105,16 +114,25 @@ export class MessageWatcher {
           } else {
             this.queue.addTask(node);
           }
-        })
-      })
+        });
+      });
     });
-    this.chatObserver.observe(chatMessagesElement, { attributes: false, childList: true, subtree: true });
+    this.chatObserver.observe(chatMessagesElement, {
+      attributes: false,
+      childList: true,
+      subtree: true,
+    });
   }
 
   private async watchMessageForXtradeIcon(messageNode: HTMLElement) {
-    const foundNode = await waitForElementToBeVisible((node) => {
-      return containsXtradeIcon(messageNode);
-    }, messageNode, true, this.config.iconWaitTime);
+    const foundNode = await waitForElementToBeVisible(
+      (node) => {
+        return containsXtradeIcon(messageNode);
+      },
+      messageNode,
+      true,
+      this.config.iconWaitTime
+    );
 
     if (foundNode) {
       this.queue.addTask(messageNode);
