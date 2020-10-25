@@ -10,7 +10,7 @@ module.exports = {
     node: true,
   },
   plugins: [
-    'svelte3',
+    'svelte3'
   ],
   overrides: [
     {

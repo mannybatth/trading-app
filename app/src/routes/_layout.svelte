@@ -16,7 +16,7 @@
   </main>
 </FirebaseApp>
 
-<script>
+<script lang="ts">
   import firebase from "firebase/app";
   import "firebase/firestore";
   import { FirebaseApp } from "sveltefire";
@@ -24,7 +24,7 @@
   import { firebaseConfig } from "../firebase-config";
   import "./_app.scss";
 
-  export let segment;
+  export let segment: string;
 
   if (firebase.apps.length === 0) {
     firebase.initializeApp(firebaseConfig);

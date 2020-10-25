@@ -8,7 +8,7 @@ import { alpaca } from "../../libs/alpaca";
 
 const allowedAlertActions = ['BTO', 'STC'];
 
-export async function post(req, res, next) {
+export async function post(req, res) {
   const alert = req.body.alert;
   const discriminator = req.body.discriminator;
 

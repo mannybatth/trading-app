@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 const WebpackModules = require('webpack-modules');
+const sveltePreprocess = require('svelte-preprocess');
 const path = require('path');
 const config = require('sapper/config/webpack.js');
 const pkg = require('./package.json');
@@ -10,7 +11,7 @@ const mode = process.env.NODE_ENV;
 const dev = mode === 'development';
 
 const alias = { svelte: path.resolve('node_modules', 'svelte') };
-const extensions = ['.mjs', '.js', '.json', '.svelte', '.html'];
+const extensions = ['.mjs', '.js', '.ts', '.json', '.svelte', '.html'];
 const mainFields = ['svelte', 'module', 'browser', 'main'];
 const fileLoaderRule = {
   test: /\.(png|jpe?g|gif)$/i,
@@ -21,18 +22,23 @@ const fileLoaderRule = {
 
 module.exports = {
   client: {
-    entry: config.client.entry(),
+    entry: { main: config.client.entry().main.replace(/\.js$/, '.ts') },
     output: config.client.output(),
     resolve: { alias, extensions, mainFields },
     module: {
-      rules: [
-        {
+			rules: [
+				{
+					test: /\.ts$/,
+					loader: 'ts-loader'
+				},
+				{
           test: /\.(svelte|html)$/,
           use: {
             loader: 'svelte-loader',
             options: {
               dev,
               hydratable: true,
+							preprocess: sveltePreprocess(),
               hotReload: false // pending https://github.com/sveltejs/svelte/issues/2377
             }
           }
@@ -84,14 +90,18 @@ module.exports = {
   },
 
   server: {
-    entry: config.server.entry(),
+    entry: { server: config.server.entry().server.replace(/\.js$/, '.ts') },
     output: config.server.output(),
     target: 'node',
     resolve: { alias, extensions, mainFields },
     externals: Object.keys(pkg.dependencies).concat('encoding'),
     module: {
-      rules: [
-        {
+			rules: [
+				{
+					test: /\.ts$/,
+					loader: 'ts-loader'
+				},
+				{
           test: /\.(svelte|html)$/,
           use: {
             loader: 'svelte-loader',
@@ -99,6 +109,7 @@ module.exports = {
               css: false,
               generate: 'ssr',
               hydratable: true,
+							preprocess: sveltePreprocess(),
               dev
             }
           }
@@ -147,8 +158,17 @@ module.exports = {
   },
 
   serviceworker: {
-    entry: config.serviceworker.entry(),
+    entry: { 'service-worker': config.serviceworker.entry()['service-worker'].replace(/\.js$/, '.ts') },
     output: config.serviceworker.output(),
-    mode
+		resolve: { extensions: ['.mjs', '.js', '.ts', '.json'] },
+		module: {
+			rules: [
+				{
+					test: /\.ts$/,
+					loader: 'ts-loader'
+				}
+			]
+		},
+		mode
   }
 };
