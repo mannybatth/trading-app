@@ -15,9 +15,7 @@ const extensions = ['.mjs', '.js', '.ts', '.json', '.svelte', '.html'];
 const mainFields = ['svelte', 'module', 'browser', 'main'];
 const fileLoaderRule = {
   test: /\.(png|jpe?g|gif)$/i,
-  use: [
-    'file-loader',
-  ]
+  use: ['file-loader'],
 };
 
 module.exports = {
@@ -29,7 +27,7 @@ module.exports = {
       rules: [
         {
           test: /\.ts$/,
-          loader: 'ts-loader'
+          loader: 'ts-loader',
         },
         {
           test: /\.(svelte|html)$/,
@@ -39,9 +37,9 @@ module.exports = {
               dev,
               hydratable: true,
               preprocess: sveltePreprocess(),
-              hotReload: false // pending https://github.com/sveltejs/svelte/issues/2377
-            }
-          }
+              hotReload: false, // pending https://github.com/sveltejs/svelte/issues/2377
+            },
+          },
         },
         {
           test: /\.(sa|sc|c)ss$/,
@@ -53,17 +51,14 @@ module.exports = {
               loader: 'sass-loader',
               options: {
                 sassOptions: {
-                  includePaths: [
-                    './src/theme',
-                    './node_modules'
-                  ]
-                }
-              }
-            }
-          ]
+                  includePaths: ['./src/theme', './node_modules'],
+                },
+              },
+            },
+          ],
         },
-        fileLoaderRule
-      ]
+        fileLoaderRule,
+      ],
     },
     mode,
     plugins: [
@@ -71,22 +66,22 @@ module.exports = {
       // dev && new webpack.HotModuleReplacementPlugin(),
       new webpack.DefinePlugin({
         'process.browser': true,
-        'process.env.NODE_ENV': JSON.stringify(mode)
+        'process.env.NODE_ENV': JSON.stringify(mode),
       }),
       new MiniCssExtractPlugin({
         filename: '[name].css',
-        chunkFilename: '[name].[id].css'
+        chunkFilename: '[name].[id].css',
       }),
       new OptimizeCssAssetsPlugin({
         assetNameRegExp: /\.css$/g,
         cssProcessor: require('cssnano'),
         cssProcessorPluginOptions: {
-          preset: ['default', { discardComments: { removeAll: true } }]
+          preset: ['default', { discardComments: { removeAll: true } }],
         },
-        canPrint: true
-      })
+        canPrint: true,
+      }),
     ].filter(Boolean),
-    devtool: dev && 'inline-source-map'
+    devtool: dev && 'inline-source-map',
   },
 
   server: {
@@ -99,7 +94,7 @@ module.exports = {
       rules: [
         {
           test: /\.ts$/,
-          loader: 'ts-loader'
+          loader: 'ts-loader',
         },
         {
           test: /\.(svelte|html)$/,
@@ -110,9 +105,9 @@ module.exports = {
               generate: 'ssr',
               hydratable: true,
               preprocess: sveltePreprocess(),
-              dev
-            }
-          }
+              dev,
+            },
+          },
         },
         {
           test: /\.(sa|sc|c)ss$/,
@@ -124,51 +119,52 @@ module.exports = {
               loader: 'sass-loader',
               options: {
                 sassOptions: {
-                  includePaths: [
-                    './src/theme',
-                    './node_modules'
-                  ]
-                }
-              }
-            }
-          ]
+                  includePaths: ['./src/theme', './node_modules'],
+                },
+              },
+            },
+          ],
         },
-        fileLoaderRule
-      ]
+        fileLoaderRule,
+      ],
     },
     mode,
     plugins: [
       new WebpackModules(),
       new MiniCssExtractPlugin({
         filename: '[name].css',
-        chunkFilename: '[name].[id].css'
+        chunkFilename: '[name].[id].css',
       }),
       new OptimizeCssAssetsPlugin({
         assetNameRegExp: /\.css$/g,
         cssProcessor: require('cssnano'),
         cssProcessorPluginOptions: {
-          preset: ['default', { discardComments: { removeAll: true } }]
+          preset: ['default', { discardComments: { removeAll: true } }],
         },
-        canPrint: true
-      })
+        canPrint: true,
+      }),
     ],
     performance: {
-      hints: false // it doesn't matter if server.js is large
-    }
+      hints: false, // it doesn't matter if server.js is large
+    },
   },
 
   serviceworker: {
-    entry: { 'service-worker': config.serviceworker.entry()['service-worker'].replace(/\.js$/, '.ts') },
+    entry: {
+      'service-worker': config.serviceworker
+        .entry()
+        ['service-worker'].replace(/\.js$/, '.ts'),
+    },
     output: config.serviceworker.output(),
     resolve: { extensions: ['.mjs', '.js', '.ts', '.json'] },
     module: {
       rules: [
         {
           test: /\.ts$/,
-          loader: 'ts-loader'
-        }
-      ]
+          loader: 'ts-loader',
+        },
+      ],
     },
-    mode
-  }
+    mode,
+  },
 };

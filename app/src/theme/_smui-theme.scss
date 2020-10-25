@@ -2,7 +2,7 @@
 // MDC Theme
 //
 
-@import "@material/theme/color-palette";
+@import '@material/theme/color-palette';
 
 body {
   background-color: #f2f2f2;
@@ -11,7 +11,7 @@ body {
 $mdc-theme-primary: $material-color-blue-700;
 $mdc-theme-secondary: $material-color-cyan-100;
 
-@import "@smui/button/style";
+@import '@smui/button/style';
 
 // .dark-theme {
 //   min-height: 100%;
