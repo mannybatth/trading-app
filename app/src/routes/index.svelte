@@ -1,3 +1,9 @@
+<script>
+  import Button from "@smui/button";
+  import Card, { Actions, Content } from "@smui/card";
+  import { Label } from "@smui/common";
+</script>
+
 <style>
 </style>
 
@@ -15,9 +21,3 @@
     </Button>
   </Actions>
 </Card>
-
-<script>
-  import Button from "@smui/button";
-  import Card, { Actions, Content } from "@smui/card";
-  import { Label } from "@smui/common";
-</script>

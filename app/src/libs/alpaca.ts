@@ -211,7 +211,7 @@ export class AlpacaClient {
   /*
     Could we return the id here so we can replace the order instead?
   */
-  async cancelOrders(orders, symbol, qty) {
+  async cancelOrders(orders, symbol: string, qty?: number) {
     if (qty) {
       const foundOrder = orders.find(order => order.symbol === symbol && parseFloat(order.qty) === qty);
       if (foundOrder) {

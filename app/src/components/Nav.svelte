@@ -1,9 +1,12 @@
+<script lang="ts">
+  export let segment: string;
+</script>
+
 <style>
   nav {
     border-bottom: 1px solid rgba(255, 62, 0, 0.1);
     font-weight: 300;
     padding: 0 1em;
-    background-color: white;
   }
 
   ul {
@@ -49,25 +52,13 @@
   <ul>
     <li>
       <a
-        aria-current="{segment === undefined ? 'page' : undefined}"
-        href="."
-      >home</a>
+        aria-current={segment === undefined ? 'page' : undefined}
+        href=".">home</a>
     </li>
     <li>
       <a
-        aria-current="{segment === 'users' ? 'page' : undefined}"
-        href="users"
-      >users</a>
-    </li>
-    <li>
-      <a
-        aria-current="{segment === 'username-changes' ? 'page' : undefined}"
-        href="username-changes"
-      >username changes</a>
+        aria-current={segment === 'about' ? 'page' : undefined}
+        href="about">about</a>
     </li>
   </ul>
 </nav>
-
-<script lang="ts">
-  let segment: string;
-</script>
