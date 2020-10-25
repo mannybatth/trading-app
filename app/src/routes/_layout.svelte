@@ -18,12 +18,12 @@
 </FirebaseApp>
 
 <script lang="ts">
-  import firebase from "firebase/app";
-  import "firebase/firestore";
-  import { FirebaseApp } from "sveltefire";
-  import Nav from "../components/Nav.svelte";
-  import { firebaseConfig } from "../firebase-config";
-  import "./_app.scss";
+  import firebase from 'firebase/app';
+  import 'firebase/firestore';
+  import { FirebaseApp } from 'sveltefire';
+  import Nav from '../components/Nav.svelte';
+  import { firebaseConfig } from '../firebase-config';
+  import './_app.scss';
 
   export let segment: string;
 
