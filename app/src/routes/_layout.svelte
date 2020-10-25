@@ -1,3 +1,22 @@
+<style>
+  main {
+    position: relative;
+    max-width: 56em;
+    background-color: white;
+    padding: 2em;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+</style>
+
+<FirebaseApp firebase="{firebase}">
+  <Nav segment="{segment}" />
+
+  <main>
+    <slot />
+  </main>
+</FirebaseApp>
+
 <script lang="ts">
   import firebase from "firebase/app";
   import "firebase/firestore";
@@ -12,22 +31,3 @@
     firebase.initializeApp(firebaseConfig);
   }
 </script>
-
-<style>
-  main {
-    position: relative;
-    max-width: 56em;
-    background-color: white;
-    padding: 2em;
-    margin: 0 auto;
-    box-sizing: border-box;
-  }
-</style>
-
-<FirebaseApp {firebase}>
-  <Nav {segment} />
-
-  <main>
-    <slot />
-  </main>
-</FirebaseApp>
