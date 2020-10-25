@@ -25,7 +25,7 @@ export class MessageQueue {
     const textDiv = node.querySelector('[class*="messageContent-"]');
     textDiv?.querySelector("blockquote")?.remove();
     const username = usernameSpan?.textContent;
-    const text = textDiv?.textContent?.trim();
+    const text = textDiv?.textContent;
 
     const alert = parseAlert(text);
     if (!alert) {

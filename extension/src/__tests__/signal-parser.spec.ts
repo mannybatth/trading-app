@@ -8,6 +8,112 @@ const tests: AlertTest[] = [
     expected: null
   },
   {
+    test: "BTO HTZ@2.50",
+    expected: {
+      action: "BTO",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: false
+    }
+  },
+  {
+    test: "BTO @2.50",
+    expected: null
+  },
+  {
+    test: "BTO   @2.50",
+    expected: null
+  },
+  {
+    test: "BTO   @   2.50",
+    expected: null
+  },
+  {
+    test: "BTO HTZ@ 2.50",
+    expected: {
+      action: "BTO",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: false
+    }
+  },
+  {
+    test: "BTO HTZ@  2.50",
+    expected: {
+      action: "BTO",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: false
+    }
+  },
+  {
+    test: "  BTO  HTZ@  2.50",
+    expected: {
+      action: "BTO",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: false
+    }
+  },
+  {
+    test: " BTO       HTZ@   2.50",
+    expected: {
+      action: "BTO",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: false
+    }
+  },
+  {
+    test: "  BTO  HTZ@ hk 2.50",
+    expected: null
+  },
+  {
+    test: "  STC  HTZ@ hk 2.50",
+    expected: {
+      action: "STC",
+      symbol: "HTZ",
+      price: null,
+      risky: false
+    }
+  },
+  {
+    test: "    STC  HTZ@    $2.50",
+    expected: {
+      action: "STC",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: false
+    }
+  },
+  {
+    test: "  BTO  HTZ@ $2.50",
+    expected: {
+      action: "BTO",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: false
+    }
+  },
+  {
+    test: "risky BTO  HTZ @$2.50",
+    expected: {
+      action: "BTO",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: true
+    }
+  },
+  {
+    test: "BTO HTZ @2.50",
+    expected: {
+      action: "BTO",
+      symbol: "HTZ",
+      price: 2.50,
+      risky: false
+    }
+  },
+  {
     test: "bto HTZ @2.50",
     expected: {
       action: "BTO",

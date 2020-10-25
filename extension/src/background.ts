@@ -12,7 +12,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onMessage.addListener((message: RuntimeMessage<any>) => {
   if (message.name === "alert") {
     const alertMessage = message as RuntimeMessage<RuntimeAlertMessage>;
-    console.log('chrome.runtime.onMessage.addListener', alertMessage.data);
+    console.log('Alert received', new Date().toLocaleString(), alertMessage.data);
 
     const discriminator = alertMessage.data?.discriminator;
     if (!allowedTraders.includes(discriminator)) {

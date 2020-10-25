@@ -15,10 +15,28 @@ export default [
   "2785", // Bahamut
   "7333", // Boatman
   "0001", // ScaredShirtless
-  "2183", //
+  "2183", // EZ Trader / I ❤ AAPL BOTTOMS
   "4208", // Tajjer
   "7916", // 007of𝒲𝒶𝓁𝓁𝓈𝓉(𝘌𝘙 𝘚𝘈𝘎𝘌)
   "1740", // ImCali
   "7378", // jkwonn
   "2769", // bluenotes
+  "0371", // Matt (Momentum trading)
+  "2015", // Berzerker
+  "5055", // Neo
+  "4808", // Devin
+  "6367", // diet coke has no calories
+  "7503", // Kjaerbye
+  "7050", // salzburry
+  "2284", // Serpico (not 70% win rate)
+  "0550", // ApeTheMonkey
+  "0083", // Kevin (Momentum)
+  "9089", // Xtrades Option Guru
+  "2237", // FunTrade
+  "9710", // JTW
+  "2624", // Matrix
+  "0732", // MJ_Peace86
+  "5845", // TeamHufflepuff
+  "2339", // MegaBull
+  "7873", // EnterpriseUS
 ]
