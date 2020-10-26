@@ -5,12 +5,13 @@ ALERT from: 1740 { action: 'STC', symbol: 'SPAQ', price: 12.28, risky: false }
 
 import send from '@polka/send-type';
 import { alpaca } from '../../libs/alpaca';
+import type { Alert } from '../../models/models';
 
 const allowedAlertActions = ['BTO', 'STC'];
 
-export async function post(req, res) {
-  const alert = req.body.alert;
-  const discriminator = req.body.discriminator;
+export async function post(req, res, next) {
+  const alert: Alert = req.body.alert;
+  const discriminator: string = req.body.discriminator;
 
   console.log('ALERT from:', discriminator, alert);
 

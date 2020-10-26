@@ -1,14 +1,21 @@
 import Alpaca from '@alpacahq/alpaca-trade-api';
 import { db, firebaseAdmin } from '../firebase-admin';
+import type {
+  Order,
+  Quote,
+  StockPosition,
+  TradeUpdateMessage,
+} from '../models/alpaca-models';
+import type { Alert, EntryPositionDoc } from '../models/models';
 
-const calcProfitLoss = (price) => {
+const calcProfitLoss = (price: number) => {
   return {
     profit: price * (1 + 0.2),
     loss: price * (1 - 0.1),
   };
 };
 
-const calcQuantity = (price) => {
+const calcQuantity = (price: number) => {
   if (price >= 500) {
     return 1;
   }
@@ -39,19 +46,19 @@ export class AlpacaClient {
     socket.onStateChange((newState) => {
       console.log(`State changed to ${newState}`);
     });
-    socket.onOrderUpdate((data) => {
-      console.log(`Order updates: ${JSON.stringify(data)}`);
-      const qty = parseFloat(data.order.qty);
+    socket.onOrderUpdate((message: TradeUpdateMessage) => {
+      console.log(`Order updates: ${JSON.stringify(message)}`);
+      const qty = parseFloat(message.order.qty);
 
-      if (data.event === 'fill' && qty > 0) {
-        const clientId = data.order.client_order_id;
+      if (message.event === 'fill' && qty > 0) {
+        const clientId: string = message.order.client_order_id;
         const [discriminator, symbol] = clientId.split('-');
 
         db.collection('positions').add({
           discriminator,
           symbol,
           quantity: qty,
-          price: parseFloat(data.price),
+          price: parseFloat(message.price),
           created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
         });
       }
@@ -59,13 +66,13 @@ export class AlpacaClient {
     socket.connect();
   }
 
-  sendOrder(alert, discriminator) {
+  sendOrder(alert: Alert, discriminator: string) {
     return alert.action === 'STC' || alert.action === 'STO'
       ? this.sellOrder(alert, discriminator)
       : this.buyOrder(alert, discriminator);
   }
 
-  async buyOrder(alert, discriminator) {
+  async buyOrder(alert: Alert, discriminator: string) {
     if (alert.risky) {
       return;
     }
@@ -76,7 +83,7 @@ export class AlpacaClient {
       return;
     }
 
-    let quote;
+    let quote: Quote;
     try {
       quote = await this.client.lastQuote(alert.symbol);
     } catch (err) {
@@ -131,11 +138,14 @@ export class AlpacaClient {
     }
   }
 
-  async sellOrder(alert, discriminator) {
-    let dbPosition, stockPositions, quote, orders;
+  async sellOrder(alert: Alert, discriminator: string) {
+    let entryPosition: FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>,
+      stockPositions: StockPosition[],
+      quote: Quote,
+      orders: Order[];
     try {
-      [dbPosition, stockPositions, quote, orders] = await Promise.all([
-        this.findDbPosition(alert.symbol, discriminator),
+      [entryPosition, stockPositions, quote, orders] = await Promise.all([
+        this.findEntryPosition(alert.symbol, discriminator),
         this.client.getPositions(),
         this.client.lastQuote(alert.symbol),
         this.client.getOrders(),
@@ -149,13 +159,12 @@ export class AlpacaClient {
       return pos.symbol === alert.symbol;
     });
 
-    // console.log('dbPosition', dbPosition);
     console.log('stockPosition', stockPosition);
     console.log('quote', quote);
     // console.log('orders', orders);
 
-    if (!dbPosition) {
-      console.log('Could not find position in db', alert, discriminator);
+    if (!entryPosition) {
+      console.log('Could not find entry position in db', alert, discriminator);
       return;
     }
 
@@ -165,14 +174,14 @@ export class AlpacaClient {
         alert,
         discriminator
       );
-      dbPosition.ref.delete();
+      entryPosition.ref.delete();
       return;
     }
 
     const clock = await this.client.getClock();
     const stockPositionQty = parseFloat(stockPosition.qty);
-    const qty = dbPosition
-      ? parseFloat(dbPosition.data().quantity)
+    const qty = entryPosition
+      ? entryPosition.data().quantity
       : stockPositionQty;
     const isFullPosition = qty === stockPositionQty;
 
@@ -204,7 +213,7 @@ export class AlpacaClient {
         });
       }
 
-      dbPosition.ref.delete();
+      entryPosition.ref.delete();
       console.log('Created order to close position', alert, discriminator);
     } catch (err) {
       console.log(
@@ -214,25 +223,24 @@ export class AlpacaClient {
     }
   }
 
-  async findDbPosition(symbol, discriminator) {
+  async findEntryPosition(symbol: string, discriminator: string) {
     // console.log('findDbPosition', symbol, discriminator);
     const snapshot = await db
       .collection('positions')
       .where('symbol', '==', symbol)
       .where('discriminator', '==', discriminator)
       .get();
-    return snapshot.size > 0 ? snapshot.docs[0] : null;
-    // return snapshot.docs.find(doc => {
-    //   const data = doc.data();
-    //   // console.log('position doc', data);
-    //   return data.symbol === symbol && data.discriminator === discriminator
-    // });
+    return snapshot.size > 0
+      ? (snapshot.docs[0] as FirebaseFirestore.QueryDocumentSnapshot<
+          EntryPositionDoc
+        >)
+      : null;
   }
 
   /*
     Could we return the id here so we can replace the order instead?
   */
-  async cancelOrders(orders, symbol: string, qty?: number) {
+  async cancelOrders(orders: Order[], symbol: string, qty?: number) {
     if (qty) {
       const foundOrder = orders.find(
         (order) => order.symbol === symbol && parseFloat(order.qty) === qty
