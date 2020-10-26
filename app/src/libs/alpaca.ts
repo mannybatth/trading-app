@@ -1,6 +1,7 @@
 import Alpaca from '@alpacahq/alpaca-trade-api';
 import { db, firebaseAdmin } from '../firebase-admin';
 import type {
+  Clock,
   Order,
   Quote,
   StockPosition,
@@ -10,7 +11,7 @@ import type { Alert, EntryPositionDoc } from '../models/models';
 
 const calcProfitLoss = (price: number) => {
   return {
-    profit: price * (1 + 0.2),
+    profit: price * (1 + 0.15),
     loss: price * (1 - 0.1),
   };
 };
@@ -77,7 +78,7 @@ export class AlpacaClient {
       return;
     }
 
-    const clock = await this.client.getClock();
+    const clock: Clock = await this.client.getClock();
     if (!clock.is_open) {
       console.log('Market is not open');
       return;
@@ -114,6 +115,14 @@ export class AlpacaClient {
     const calc = calcProfitLoss(alert.price);
     const quantity = calcQuantity(alert.price);
     try {
+      console.log(
+        'Creating buy order',
+        alert.symbol,
+        'limit price:',
+        calc.profit,
+        'stop limit',
+        calc.loss - spread
+      );
       await this.client.createOrder({
         symbol: alert.symbol,
         qty: quantity,
@@ -134,7 +143,7 @@ export class AlpacaClient {
         }-${new Date().getTime()}`,
       });
     } catch (err) {
-      console.log('ERROR creating order:', err);
+      console.log('ERROR creating order:', (err && err.error) || err);
     }
   }
 

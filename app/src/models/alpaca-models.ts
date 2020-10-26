@@ -31,3 +31,7 @@ export interface TradeUpdateMessage {
   position_qty: string;
   order: Order;
 }
+
+export interface Clock {
+  is_open: boolean;
+}
