@@ -3,9 +3,9 @@ import { db, firebaseAdmin } from '../firebase-admin';
 import type {
   Clock,
   Order,
+  OrderUpdateMessage,
   Quote,
   StockPosition,
-  TradeUpdateMessage,
 } from '../models/alpaca-models';
 import type { Alert, EntryPositionDoc } from '../models/models';
 
@@ -47,7 +47,7 @@ export class AlpacaClient {
     socket.onStateChange((newState) => {
       console.log(`State changed to ${newState}`);
     });
-    socket.onOrderUpdate((message: TradeUpdateMessage) => {
+    socket.onOrderUpdate((message: OrderUpdateMessage) => {
       console.log(`Order updates: ${JSON.stringify(message)}`);
       const qty = parseFloat(message.order.qty);
 
@@ -208,7 +208,6 @@ export class AlpacaClient {
           side: 'sell',
           type: 'market',
           time_in_force: 'day',
-          extended_hours: true,
         });
       } else {
         await this.client.createOrder({

@@ -24,7 +24,7 @@ export interface Order {
   client_order_id: string;
 }
 
-export interface TradeUpdateMessage {
+export interface OrderUpdateMessage {
   event: string;
   price: string;
   timestamp: string;
