@@ -7,12 +7,17 @@ import type {
   Quote,
   StockPosition,
 } from '../models/alpaca-models';
+import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
+
+const round = (value: number, decimals: number) => {
+  return Number(Math.round((value + 'e' + decimals) as any) + 'e-' + decimals);
+};
 
 const calcProfitLoss = (price: number) => {
   return {
-    profit: price * (1 + 0.15),
-    loss: price * (1 - 0.1),
+    profit: round(price * (1 + 0.15), 3),
+    loss: round(price * (1 - 0.1), 3),
   };
 };
 
@@ -29,8 +34,8 @@ export class AlpacaClient {
 
   init() {
     this.client = new Alpaca({
-      keyId: 'PKL7QOHWIBC4LISNDKKQ',
-      secretKey: 'N013k8VuH1ZthxjraYwchFNnOsQdz5EWbdgNltx2',
+      keyId: 'PK97CC1QS8KY9XX01595',
+      secretKey: 'WwuxkcYJMKHZe9EZq2LIoO6x1p0vCxGA806nPrUP',
       paper: true,
       usePolygon: false,
     });
@@ -44,12 +49,13 @@ export class AlpacaClient {
     socket.onDisconnect(() => {
       console.log('Disconnected from socket');
     });
-    socket.onStateChange((newState) => {
+    socket.onStateChange((newState: string) => {
       console.log(`State changed to ${newState}`);
     });
     socket.onOrderUpdate((message: OrderUpdateMessage) => {
       console.log('');
       console.log(
+        colors.fg.Cyan,
         `Order updates: ${JSON.stringify({
           event: message.event,
           side: message.order.side,
@@ -94,7 +100,7 @@ export class AlpacaClient {
 
     const clock: Clock = await this.client.getClock();
     if (!clock.is_open) {
-      console.log('Market is not open');
+      console.log(colors.fg.Yellow, 'Market is not open');
       return;
     }
 
@@ -102,7 +108,7 @@ export class AlpacaClient {
     try {
       quote = await this.client.lastQuote(alert.symbol);
     } catch (err) {
-      console.log('Failed to get quote', alert.symbol);
+      console.log(colors.fg.Red, 'Failed to get quote', alert.symbol);
       return;
     }
 
@@ -112,8 +118,10 @@ export class AlpacaClient {
     const validPrice =
       alert.price < ask + spread * 2 && alert.price > bid - spread * 2;
 
+    console.log('quote', quote);
     if (!validPrice) {
       console.log(
+        colors.fg.Red,
         'Price is not valid',
         alert.price,
         alert.symbol,
@@ -124,7 +132,6 @@ export class AlpacaClient {
       );
       return false;
     }
-    console.log('quote', quote);
 
     const calc = calcProfitLoss(alert.price);
     const quantity = calcQuantity(alert.price);
@@ -157,24 +164,34 @@ export class AlpacaClient {
         }-${new Date().getTime()}`,
       });
     } catch (err) {
-      console.log('ERROR creating order:', (err && err.error) || err);
+      console.log(
+        colors.fg.Red,
+        'ERROR creating order:',
+        (err && err.error) || err
+      );
     }
   }
 
   async sellOrder(alert: Alert, discriminator: string) {
     let entryPosition: FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>,
+      entryPositionSnapshot: FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
       stockPositions: StockPosition[],
       quote: Quote,
       orders: Order[];
     try {
-      [entryPosition, stockPositions, quote, orders] = await Promise.all([
+      [
+        { doc: entryPosition, snapshot: entryPositionSnapshot },
+        stockPositions,
+        quote,
+        orders,
+      ] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
         this.client.getPositions(),
         this.client.lastQuote(alert.symbol),
         this.client.getOrders(),
       ]);
     } catch (err) {
-      console.log('ERROR getting data for sell order', err);
+      console.log(colors.fg.Red, 'ERROR getting data for sell order', err);
       return;
     }
 
@@ -182,23 +199,23 @@ export class AlpacaClient {
       return pos.symbol === alert.symbol;
     });
 
+    if (!stockPosition) {
+      console.log(
+        'Did not find stock position, cancelling any open orders',
+        alert,
+        discriminator
+      );
+      this.cancelOrders(orders, alert.symbol);
+      entryPositionSnapshot.docs.forEach((doc) => doc.ref.delete());
+      return;
+    }
+
     console.log('stockPosition', stockPosition);
     console.log('quote', quote);
     // console.log('orders', orders);
 
     if (!entryPosition) {
       console.log('Could not find entry position in db', alert, discriminator);
-      return;
-    }
-
-    if (!stockPosition) {
-      console.log(
-        'Did not find stock position, deleting position from firebase, ',
-        alert,
-        discriminator
-      );
-      entryPosition.ref.delete();
-      return;
     }
 
     const clock = await this.client.getClock();
@@ -209,9 +226,7 @@ export class AlpacaClient {
     const isFullPosition = qty === stockPositionQty;
 
     // Cancel existing orders
-    isFullPosition
-      ? await this.cancelOrders(orders, alert.symbol)
-      : await this.cancelOrders(orders, alert.symbol, qty);
+    await this.cancelOrders(orders, alert.symbol, !isFullPosition && qty);
 
     // Create sell order
     try {
@@ -235,10 +250,11 @@ export class AlpacaClient {
         });
       }
 
-      entryPosition.ref.delete();
+      entryPosition && entryPosition.ref.delete();
       console.log('Created order to close position', alert, discriminator);
     } catch (err) {
       console.log(
+        colors.fg.Red,
         'ERROR creating order to close position',
         (err && err.error) || err
       );
@@ -246,17 +262,25 @@ export class AlpacaClient {
   }
 
   async findEntryPosition(symbol: string, discriminator: string) {
-    // console.log('findDbPosition', symbol, discriminator);
+    type ReturnType = FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>;
     const snapshot = await db
       .collection('positions')
       .where('symbol', '==', symbol)
-      .where('discriminator', '==', discriminator)
       .get();
-    return snapshot.size > 0
-      ? (snapshot.docs[0] as FirebaseFirestore.QueryDocumentSnapshot<
-          EntryPositionDoc
-        >)
-      : null;
+    for (const doc of snapshot.docs) {
+      if (doc.data().discriminator === discriminator) {
+        return {
+          doc: doc as ReturnType,
+          snapshot: snapshot as FirebaseFirestore.QuerySnapshot<
+            EntryPositionDoc
+          >,
+        };
+      }
+    }
+    return {
+      doc: snapshot.size > 0 ? (snapshot.docs[0] as ReturnType) : null,
+      snapshot: snapshot as FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
+    };
   }
 
   /*

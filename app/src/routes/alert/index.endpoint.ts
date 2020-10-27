@@ -5,6 +5,7 @@ ALERT from: 1740 { action: 'STC', symbol: 'SPAQ', price: 12.28, risky: false }
 
 import send from '@polka/send-type';
 import { alpaca } from '../../libs/alpaca';
+import { colors } from '../../models/colors';
 import type { Alert } from '../../models/models';
 
 const allowedAlertActions = ['BTO', 'STC'];
@@ -13,7 +14,7 @@ export async function post(req, res, next) {
   const alert: Alert = req.body.alert;
   const discriminator: string = req.body.discriminator;
 
-  console.log('ALERT from:', discriminator, alert);
+  console.log(colors.fg.Magenta, 'ALERT from:', discriminator, alert);
 
   if (!allowedAlertActions.includes(alert.action)) {
     send(res, 200, { result: 'Alert action not allowed' });
