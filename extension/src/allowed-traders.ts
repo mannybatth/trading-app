@@ -39,4 +39,5 @@ export default [
   '5845', // TeamHufflepuff
   '2339', // MegaBull
   '7873', // EnterpriseUS
+  '5603', // darkestly
 ];

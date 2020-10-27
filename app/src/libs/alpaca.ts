@@ -48,20 +48,34 @@ export class AlpacaClient {
       console.log(`State changed to ${newState}`);
     });
     socket.onOrderUpdate((message: OrderUpdateMessage) => {
-      console.log(`Order updates: ${JSON.stringify(message)}`);
-      const qty = parseFloat(message.order.qty);
+      console.log('');
+      console.log(
+        `Order updates: ${JSON.stringify({
+          event: message.event,
+          side: message.order.side,
+          symbol: message.order.symbol,
+          filled_qty: message.order.filled_qty,
+          order_qty: message.order.qty,
+          order_type: message.order.order_type,
+          limit_price: message.order.limit_price,
+          client_order_id: message.order.client_order_id,
+        })}`
+      );
+      if (message.event === 'fill') {
+        const qty = parseFloat(message.order.filled_qty);
 
-      if (message.event === 'fill' && qty > 0) {
-        const clientId: string = message.order.client_order_id;
-        const [discriminator, symbol] = clientId.split('-');
+        if (qty > 0 && message.order.side === 'buy') {
+          const clientId: string = message.order.client_order_id;
+          const [discriminator, symbol] = clientId.split('-');
 
-        db.collection('positions').add({
-          discriminator,
-          symbol,
-          quantity: qty,
-          price: parseFloat(message.price),
-          created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
-        });
+          db.collection('positions').add({
+            discriminator,
+            symbol,
+            quantity: qty,
+            price: parseFloat(message.price),
+            created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
       }
     });
     socket.connect();

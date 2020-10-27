@@ -1,16 +1,16 @@
 {
   "editor.tabSize": 2,
-  "editor.insertSpaces": true,
   "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": true,
-    "source.fixAll": true
-  },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
   },
-  "files.eol": "\n",
+  "html.format.wrapLineLength": 140,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.tslint": true,
+    "source.organizeImports": true
+  },
+  "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "typescript.tsdk": "./node_modules/typescript/lib",
   "json.schemas": [
