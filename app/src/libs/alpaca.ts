@@ -4,11 +4,11 @@ import type {
   Clock,
   Order,
   OrderUpdateMessage,
-  Quote,
   StockPosition,
 } from '../models/alpaca-models';
 import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
+import { FinnhubQuote, getFinnhubQuote, isValidPrice } from './quote';
 
 const round = (value: number, decimals: number) => {
   return Number(Math.round((value + 'e' + decimals) as any) + 'e-' + decimals);
@@ -104,33 +104,23 @@ export class AlpacaClient {
       return;
     }
 
-    let quote: Quote;
-    try {
-      quote = await this.client.lastQuote(alert.symbol);
-    } catch (err) {
-      console.log(colors.fg.Red, 'Failed to get quote', alert.symbol);
-      return;
-    }
-
-    const bid = quote.last.bidprice;
-    const ask = quote.last.askprice;
-    const spread = ask - bid;
-    const validPrice =
-      alert.price < ask + spread * 2 && alert.price > bid - spread * 2;
-
-    console.log('quote', quote);
-    if (!validPrice) {
+    const validInfo = await isValidPrice(
+      alert.symbol,
+      alert.price,
+      this.client
+    );
+    if (!validInfo.valid) {
       console.log(
         colors.fg.Red,
         'Price is not valid',
         alert.price,
         alert.symbol,
         'bid:',
-        bid,
+        validInfo.bid,
         'ask:',
-        ask
+        validInfo.ask
       );
-      return false;
+      return;
     }
 
     const calc = calcProfitLoss(alert.price);
@@ -139,10 +129,12 @@ export class AlpacaClient {
       console.log(
         'Creating buy order',
         alert.symbol,
-        'limit price:',
+        'limit:',
+        alert.price,
+        'profit:',
         calc.profit,
-        'stop limit',
-        calc.loss - spread
+        'stop limit:',
+        calc.loss - validInfo.spread
       );
       await this.client.createOrder({
         symbol: alert.symbol,
@@ -157,7 +149,7 @@ export class AlpacaClient {
         },
         stop_loss: {
           stop_price: calc.loss,
-          limit_price: calc.loss - spread,
+          limit_price: calc.loss - validInfo.spread,
         },
         client_order_id: `${discriminator}-${
           alert.symbol
@@ -176,7 +168,8 @@ export class AlpacaClient {
     let entryPosition: FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>,
       entryPositionSnapshot: FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
       stockPosition: StockPosition,
-      quote: Quote,
+      quote: FinnhubQuote,
+      // quote: Quote,
       orders: Order[];
     try {
       [
@@ -187,11 +180,13 @@ export class AlpacaClient {
       ] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
         this.findStockPosition(alert.symbol),
-        this.client.lastQuote(alert.symbol),
+        getFinnhubQuote(alert.symbol),
+        // this.client.lastQuote(alert.symbol),
         this.client.getOrders(),
       ]);
     } catch (err) {
-      console.log(colors.fg.Red, 'ERROR getting data for sell order', err);
+      const error = (err && err.error) || err;
+      console.log(colors.fg.Red, 'ERROR getting data for sell order', error);
       return;
     }
 
@@ -238,7 +233,8 @@ export class AlpacaClient {
           qty: qty,
           side: 'sell',
           type: 'limit',
-          limit_price: quote.last.bidprice,
+          limit_price: quote.c,
+          // limit_price: quote.last.bidprice,
           time_in_force: 'day',
           extended_hours: true,
         });
@@ -306,9 +302,9 @@ export class AlpacaClient {
     };
   }
 
-  findStockPosition(symbol: string): Promise<StockPosition> {
+  async findStockPosition(symbol: string): Promise<StockPosition> {
     try {
-      return this.client.getPosition(symbol);
+      return await this.client.getPosition(symbol);
     } catch (err) {
       return Promise.resolve(null);
     }
