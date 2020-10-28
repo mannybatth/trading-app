@@ -175,18 +175,18 @@ export class AlpacaClient {
   async sellOrder(alert: Alert, discriminator: string) {
     let entryPosition: FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>,
       entryPositionSnapshot: FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
-      stockPositions: StockPosition[],
+      stockPosition: StockPosition,
       quote: Quote,
       orders: Order[];
     try {
       [
         { doc: entryPosition, snapshot: entryPositionSnapshot },
-        stockPositions,
+        stockPosition,
         quote,
         orders,
       ] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
-        this.client.getPositions(),
+        this.findStockPosition(alert.symbol),
         this.client.lastQuote(alert.symbol),
         this.client.getOrders(),
       ]);
@@ -194,10 +194,6 @@ export class AlpacaClient {
       console.log(colors.fg.Red, 'ERROR getting data for sell order', err);
       return;
     }
-
-    const stockPosition = stockPositions.find((pos) => {
-      return pos.symbol === alert.symbol;
-    });
 
     if (!stockPosition) {
       console.log(
@@ -212,7 +208,6 @@ export class AlpacaClient {
 
     console.log('stockPosition', stockPosition);
     console.log('quote', quote);
-    // console.log('orders', orders);
 
     if (!entryPosition) {
       console.log('Could not find entry position in db', alert, discriminator);
@@ -228,8 +223,7 @@ export class AlpacaClient {
     // Cancel existing orders
     await this.cancelOrders(orders, alert.symbol, !isFullPosition && qty);
 
-    // Create sell order
-    try {
+    const executeSellOrder = async () => {
       if (clock.is_open) {
         await this.client.createOrder({
           symbol: alert.symbol,
@@ -252,12 +246,41 @@ export class AlpacaClient {
 
       entryPosition && entryPosition.ref.delete();
       console.log('Created order to close position', alert, discriminator);
+    };
+
+    // Create sell order
+    try {
+      executeSellOrder();
     } catch (err) {
+      const error = (err && err.error) || err;
       console.log(
         colors.fg.Red,
         'ERROR creating order to close position',
-        (err && err.error) || err
+        error
       );
+
+      if (
+        error &&
+        error.message &&
+        error.message.includes('insufficient qty available for order')
+      ) {
+        setTimeout(() => {
+          console.log(
+            'Trying sell order again now after 3s',
+            alert,
+            discriminator
+          );
+          try {
+            executeSellOrder();
+          } catch (err) {
+            console.log(
+              colors.fg.Red,
+              'ERROR! creating order to close position on 2nd try',
+              (err && err.error) || err
+            );
+          }
+        }, 3000);
+      }
     }
   }
 
@@ -281,6 +304,14 @@ export class AlpacaClient {
       doc: snapshot.size > 0 ? (snapshot.docs[0] as ReturnType) : null,
       snapshot: snapshot as FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
     };
+  }
+
+  findStockPosition(symbol: string): Promise<StockPosition> {
+    try {
+      return this.client.getPosition(symbol);
+    } catch (err) {
+      return Promise.resolve(null);
+    }
   }
 
   /*
