@@ -1,7 +1,7 @@
 import allowedTraders from './allowed-traders';
 import { RuntimeAlertMessage, RuntimeMessage } from './models/models';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://localhost:3000';
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo?.url && changeInfo?.url.includes('discord')) {

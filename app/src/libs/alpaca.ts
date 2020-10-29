@@ -1,11 +1,7 @@
 import Alpaca from '@alpacahq/alpaca-trade-api';
+import { alpacaApiKey, alpacaApiSecret, maxPositionSize, profitPercent, stopLossPercent } from '../constants';
 import { db, firebaseAdmin } from '../firebase-admin';
-import type {
-  Clock,
-  Order,
-  OrderUpdateMessage,
-  StockPosition,
-} from '../models/alpaca-models';
+import type { Clock, Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-models';
 import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
 import { FinnhubQuote, getFinnhubQuote, isValidPrice } from './quote';
@@ -16,17 +12,17 @@ const round = (value: number, decimals: number) => {
 
 const calcProfitLoss = (price: number) => {
   return {
-    profit: round(price * (1 + 0.15), 3),
-    loss: round(price * (1 - 0.1), 3),
+    profit: round(price * (1 + profitPercent), 3),
+    loss: round(price * (1 - stopLossPercent), 3),
   };
 };
 
 const calcQuantity = (price: number) => {
-  if (price >= 500) {
+  if (price >= maxPositionSize) {
     return 1;
   }
 
-  return Math.floor(500 / price);
+  return Math.floor(maxPositionSize / price);
 };
 
 export class AlpacaClient {
@@ -34,8 +30,8 @@ export class AlpacaClient {
 
   init() {
     this.client = new Alpaca({
-      keyId: 'PK97CC1QS8KY9XX01595',
-      secretKey: 'WwuxkcYJMKHZe9EZq2LIoO6x1p0vCxGA806nPrUP',
+      keyId: alpacaApiKey,
+      secretKey: alpacaApiSecret,
       paper: true,
       usePolygon: false,
     });
@@ -88,9 +84,7 @@ export class AlpacaClient {
   }
 
   sendOrder(alert: Alert, discriminator: string) {
-    return alert.action === 'STC' || alert.action === 'STO'
-      ? this.sellOrder(alert, discriminator)
-      : this.buyOrder(alert, discriminator);
+    return alert.action === 'STC' || alert.action === 'STO' ? this.sellOrder(alert, discriminator) : this.buyOrder(alert, discriminator);
   }
 
   async buyOrder(alert: Alert, discriminator: string) {
@@ -104,22 +98,9 @@ export class AlpacaClient {
       return;
     }
 
-    const validInfo = await isValidPrice(
-      alert.symbol,
-      alert.price,
-      this.client
-    );
+    const validInfo = await isValidPrice(alert.symbol, alert.price, this.client);
     if (!validInfo.valid) {
-      console.log(
-        colors.fg.Red,
-        'Price is not valid',
-        alert.price,
-        alert.symbol,
-        'bid:',
-        validInfo.bid,
-        'ask:',
-        validInfo.ask
-      );
+      console.log(colors.fg.Red, 'Price is not valid', alert.price, alert.symbol, 'bid:', validInfo.bid, 'ask:', validInfo.ask);
       return;
     }
 
@@ -151,16 +132,10 @@ export class AlpacaClient {
           stop_price: calc.loss,
           limit_price: calc.loss - validInfo.spread,
         },
-        client_order_id: `${discriminator}-${
-          alert.symbol
-        }-${new Date().getTime()}`,
+        client_order_id: `${discriminator}-${alert.symbol}-${new Date().getTime()}`,
       });
     } catch (err) {
-      console.log(
-        colors.fg.Red,
-        'ERROR creating order:',
-        (err && err.error) || err
-      );
+      console.log(colors.fg.Red, 'ERROR creating order:', (err && err.error) || err);
     }
   }
 
@@ -172,12 +147,7 @@ export class AlpacaClient {
       // quote: Quote,
       orders: Order[];
     try {
-      [
-        { doc: entryPosition, snapshot: entryPositionSnapshot },
-        stockPosition,
-        quote,
-        orders,
-      ] = await Promise.all([
+      [{ doc: entryPosition, snapshot: entryPositionSnapshot }, stockPosition, quote, orders] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
         this.findStockPosition(alert.symbol),
         getFinnhubQuote(alert.symbol),
@@ -191,11 +161,7 @@ export class AlpacaClient {
     }
 
     if (!stockPosition) {
-      console.log(
-        'Did not find stock position, cancelling any open orders',
-        alert,
-        discriminator
-      );
+      console.log('Did not find stock position, cancelling any open orders', alert, discriminator);
       this.cancelOrders(orders, alert.symbol);
       entryPositionSnapshot.docs.forEach((doc) => doc.ref.delete());
       return;
@@ -210,9 +176,7 @@ export class AlpacaClient {
 
     const clock = await this.client.getClock();
     const stockPositionQty = parseFloat(stockPosition.qty);
-    const qty = entryPosition
-      ? entryPosition.data().quantity
-      : stockPositionQty;
+    const qty = entryPosition ? entryPosition.data().quantity : stockPositionQty;
     const isFullPosition = qty === stockPositionQty;
 
     // Cancel existing orders
@@ -246,34 +210,18 @@ export class AlpacaClient {
 
     // Create sell order
     try {
-      executeSellOrder();
+      await executeSellOrder();
     } catch (err) {
       const error = (err && err.error) || err;
-      console.log(
-        colors.fg.Red,
-        'ERROR creating order to close position',
-        error
-      );
+      console.log(colors.fg.Red, 'ERROR creating order to close position', error);
 
-      if (
-        error &&
-        error.message &&
-        error.message.includes('insufficient qty available for order')
-      ) {
-        setTimeout(() => {
-          console.log(
-            'Trying sell order again now after 3s',
-            alert,
-            discriminator
-          );
+      if (error && error.message && error.message.includes('insufficient qty available for order')) {
+        setTimeout(async () => {
+          console.log('Trying sell order again now after 3s', alert, discriminator);
           try {
-            executeSellOrder();
+            await executeSellOrder();
           } catch (err) {
-            console.log(
-              colors.fg.Red,
-              'ERROR! creating order to close position on 2nd try',
-              (err && err.error) || err
-            );
+            console.log(colors.fg.Red, 'ERROR! creating order to close position on 2nd try', (err && err.error) || err);
           }
         }, 3000);
       }
@@ -282,17 +230,12 @@ export class AlpacaClient {
 
   async findEntryPosition(symbol: string, discriminator: string) {
     type ReturnType = FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>;
-    const snapshot = await db
-      .collection('positions')
-      .where('symbol', '==', symbol)
-      .get();
+    const snapshot = await db.collection('positions').where('symbol', '==', symbol).get();
     for (const doc of snapshot.docs) {
       if (doc.data().discriminator === discriminator) {
         return {
           doc: doc as ReturnType,
-          snapshot: snapshot as FirebaseFirestore.QuerySnapshot<
-            EntryPositionDoc
-          >,
+          snapshot: snapshot as FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
         };
       }
     }
@@ -315,9 +258,7 @@ export class AlpacaClient {
   */
   async cancelOrders(orders: Order[], symbol: string, qty?: number) {
     if (qty) {
-      const foundOrder = orders.find(
-        (order) => order.symbol === symbol && parseFloat(order.qty) === qty
-      );
+      const foundOrder = orders.find((order) => order.symbol === symbol && parseFloat(order.qty) === qty);
       if (foundOrder) {
         console.log('cancelling order', foundOrder.id);
         await this.client.cancelOrder(foundOrder.id);

@@ -1,3 +1,14 @@
+<script lang="ts">
+  export let segment: string;
+</script>
+
+<nav>
+  <ul>
+    <li><a aria-current="{segment === undefined ? 'page' : undefined}" href=".">home</a></li>
+    <li><a aria-current="{segment === 'td' ? 'page' : undefined}" href="td">TD Ameritrade</a></li>
+  </ul>
+</nav>
+
 <style>
   nav {
     border-bottom: 1px solid rgba(255, 62, 0, 0.1);
@@ -43,24 +54,3 @@
     display: block;
   }
 </style>
-
-<nav>
-  <ul>
-    <li>
-      <a
-        aria-current="{segment === undefined ? 'page' : undefined}"
-        href="."
-      >home</a>
-    </li>
-    <li>
-      <a
-        aria-current="{segment === 'about' ? 'page' : undefined}"
-        href="about"
-      >about</a>
-    </li>
-  </ul>
-</nav>
-
-<script lang="ts">
-  export let segment: string;
-</script>

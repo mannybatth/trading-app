@@ -1,14 +1,8 @@
 import type Alpaca from '@alpacahq/alpaca-trade-api';
 import fetch from 'node-fetch';
+import { finnhubApiKey, finnhubApiUrl, finnhubSpreadPercent, useFinnhubQuotes } from '../constants';
 import type { Quote } from '../models/alpaca-models';
 import { colors } from '../models/colors';
-
-export const useFinnhubQuotes = true;
-
-const finnhubApiUrl = 'https://finnhub.io/api';
-const finnhubApiKey = 'bucfnin48v6t51vhnr20';
-
-const margin = 0.015;
 
 export interface FinnhubQuote {
   c: number;
@@ -34,7 +28,7 @@ export const isValidPrice = async (
           valid: false,
         };
       }
-      const spread = finnhubQuote.c * margin;
+      const spread = finnhubQuote.c * finnhubSpreadPercent;
       const ask = finnhubQuote.c + spread;
       const bid = finnhubQuote.c - spread;
       const valid = price < ask && price > bid;
@@ -77,12 +71,8 @@ export const isValidPrice = async (
   };
 };
 
-export const getFinnhubQuote = async (
-  symbol: string
-): Promise<FinnhubQuote> => {
-  const response = await fetch(
-    `${finnhubApiUrl}/v1/quote?symbol=${symbol}&token=${finnhubApiKey}`
-  );
+export const getFinnhubQuote = async (symbol: string): Promise<FinnhubQuote> => {
+  const response = await fetch(`${finnhubApiUrl}/v1/quote?symbol=${symbol}&token=${finnhubApiKey}`);
   const json = await response.json();
   return json;
 };

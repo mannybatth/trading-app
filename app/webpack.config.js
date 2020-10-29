@@ -151,9 +151,7 @@ module.exports = {
 
   serviceworker: {
     entry: {
-      'service-worker': config.serviceworker
-        .entry()
-        ['service-worker'].replace(/\.js$/, '.ts'),
+      'service-worker': config.serviceworker.entry()['service-worker'].replace(/\.js$/, '.ts'),
     },
     output: config.serviceworker.output(),
     resolve: { extensions: ['.mjs', '.js', '.ts', '.json'] },

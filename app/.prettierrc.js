@@ -1,7 +1,8 @@
 module.exports = {
-  svelteSortOrder: 'styles-markup-scripts',
+  svelteSortOrder: 'scripts-markup-styles',
   svelteStrictMode: true,
   svelteBracketNewLine: true,
-  svelteAllowShorthand: false,
+  svelteAllowShorthand: true,
   singleQuote: true,
+  printWidth: 100,
 };

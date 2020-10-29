@@ -17,6 +17,8 @@
     "compression": "^1.7.1",
     "firebase": "^7.24.0",
     "firebase-admin": "^9.3.0",
+    "https": "^1.0.0",
+    "isomorphic-fetch": "^3.0.0",
     "polka": "next",
     "request": "^2.88.2",
     "sirv": "^1.0.0"
