@@ -51,7 +51,7 @@ module.exports = {
               loader: 'sass-loader',
               options: {
                 sassOptions: {
-                  includePaths: ['./src/theme', './node_modules'],
+                  includePaths: ['./src/styles', './node_modules'],
                 },
               },
             },
@@ -119,7 +119,7 @@ module.exports = {
               loader: 'sass-loader',
               options: {
                 sassOptions: {
-                  includePaths: ['./src/theme', './node_modules'],
+                  includePaths: ['./src/styles', './node_modules'],
                 },
               },
             },

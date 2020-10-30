@@ -39,10 +39,3 @@ declare module '*.webp' {
 }
 
 declare module 'sveltefire';
-declare module '@smui/common';
-declare module '@smui/textfield';
-declare module '@smui/icon-button';
-declare module '@smui/dialog';
-declare module '@smui/data-table';
-declare module '@smui/card';
-declare module '@smui/button';

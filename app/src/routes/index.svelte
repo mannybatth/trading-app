@@ -1,7 +1,4 @@
-<script>
-  import Button from '@smui/button';
-  import Card, { Actions, Content } from '@smui/card';
-  import { Label } from '@smui/common';
+<script lang="ts">
 </script>
 
 <svelte:head>
@@ -9,15 +6,6 @@
 </svelte:head>
 
 <h2>Trading App</h2>
-
-<Card style="width: 320px;">
-  <Content>A card with a full-bleed action.</Content>
-  <Actions>
-    <Button>
-      <Label>Action</Label>
-    </Button>
-  </Actions>
-</Card>
 
 <style>
 </style>

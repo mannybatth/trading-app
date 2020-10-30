@@ -3,8 +3,9 @@
   import 'firebase/firestore';
   import { FirebaseApp } from 'sveltefire';
   import Nav from '../components/Nav.svelte';
+  import Notifications from '../components/Notifications.svelte';
   import { firebaseConfig } from '../firebase-config';
-  import './_app.scss';
+  import '../styles/_app.scss';
 
   export let segment: string;
 
@@ -12,6 +13,8 @@
     firebase.initializeApp(firebaseConfig);
   }
 </script>
+
+<Notifications />
 
 <FirebaseApp firebase="{firebase}">
   <Nav segment="{segment}" />
@@ -25,7 +28,6 @@
   main {
     position: relative;
     max-width: 56em;
-    background-color: white;
     padding: 2em;
     margin: 0 auto;
     box-sizing: border-box;

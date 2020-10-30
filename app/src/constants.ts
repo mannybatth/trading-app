@@ -6,48 +6,15 @@ export const stopLossPercent = 0.1;
 export const alpacaApiKey = 'PK97CC1QS8KY9XX01595';
 export const alpacaApiSecret = 'WwuxkcYJMKHZe9EZq2LIoO6x1p0vCxGA806nPrUP';
 
-export const useFinnhubQuotes = true;
 export const finnhubSpreadPercent = 0.015;
 export const finnhubApiUrl = 'https://finnhub.io/api';
 export const finnhubApiKey = 'bucfnin48v6t51vhnr20';
 
 export const ameritradeClientId = '2GYLNACFVP5FVOFFI1TYKL1X8MKP605Y';
+export const ameritradeApiUrl = 'https://api.tdameritrade.com';
 export const ameritradeAuthUrl = 'https://auth.tdameritrade.com/auth';
-export const ameritradeTokenUrl = 'https://api.tdameritrade.com/v1/oauth2/token';
+export const ameritradeTokenUrl = `${ameritradeApiUrl}/v1/oauth2/token`;
 export const ameritradeTokens = {
   accessToken: '',
   refreshToken: '',
 };
-
-// https://auth.tdameritrade.com/auth?response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000&client_id=2GYLNACFVP5FVOFFI1TYKL1X8MKP605Y%40AMER.OAUTHAP
-// https://auth.tdameritrade.com/auth?response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Ftd%2Fcallback.endpoint&client_id=2GYLNACFVP5FVOFFI1TYKL1X8MKP605Y%40AMER.OAUTHAP
-/*
-POST https://api.tdameritrade.com/v1/oauth2/token
-
-body:
-
-grant_type=authorization_code
-&access_type=offline
-&code=
-&client_id=2GYLNACFVP5FVOFFI1TYKL1X8MKP605Y
-&redirect_uri=http%3A%2F%2Flocalhost%3A3000
-
-response: {
-  "access_token": "KKaJbESwm3HPuK5pfEXQ7HaeShBsmTArjMf9WZJBHpVqJMS0ND0KW15x+iEbbuGsNUlAShT/8Jad9CX0IpWbIeIWA3gb326Pkmf809+zY9feTWBg48BVGMuayPJmrLSuCnak1p+Wh8dzqcGUajLI/HyU1SL5XqQZqMOl/0gkF3n5E/Kpc9Nf8WPnI2zaq3WkJx6MSJu2jxdz71XBy2DH2mjUi9nbdNfyvcYvSTOzCK6///y2aaehxDuP1ykzw5f0UV1d+8ZcfsQng28SjjoUDRVKhYnuD7qE7XZfy8LPojgw+reZPhvtA5xrV9AbSr+7kcBKPUKsp0HshSuXHd5vXxq8xliJ/m9ZJJxtEjCIzC+eWK2v90B4MQSQaI0cNw8u6SVpI4ltK0wMMweKFiH/fyXVblx7ohrpk5iI1/WdS3OA46qCrE1q3vDnIMSy4BED+CfGAWsBlY4MZFyWGXb+3M/bMm4E/tQclkIFVoYwkxWJqLj66viO2PjHy5Fv+/31Th56WwkDFHqXJI3t97ASh3g13mwTKGpRrCPuXXo1zFcg7cHOp100MQuG4LYrgoVi/JHHvl8cCjhGYQvAKlHqhW0UKfGWTn7C+d21RIeHdMMfyJ8YHL0iETioCU+YDsL9c6BWEFDrbO9ahjEh3roYMc7KdWdAUYs9xE8Q3ayi/nkeJZ3Zan4waaCJ+P+/90zBruvogZ2Kt8vDxH1WK1QiAud/gQHli0ee33QDpewjiT/3nEcqyKMC33JLn1VTiPTXFjyyJU/BJjlb+sw5qGLhV09Y2SNPtGI2IQ0Gd6t6NV5+NDvj3/NX5ARxOP3/OX4xhrVaBSm5Wze6OpMr2Gpr4sZFY6LxWkEIbe+W6DZsnst5l2QsV5uri4UhgyIJZziihbmWNJ1kFrtg4ZhqpBc5PRSB3d0L6EI5dJZB7e+j4u5ob4+IvgjUP3f3tWPzUkX40N6522XRuGFyWUIKgOcQh05DsooyWETFbPfJXvKEw7Zce55wIuJzn/DLbYarCLPg5vFRZzxBYY1F1OUTinz3hK+t+Dta1ic6QT3Hr+91LIdXDchhTyJJugffhicgG3mLN4UaqBPeE0YBicAyixZkikJAFCnQOCrNvxzsmKz07uQCK3ztSGcPpg==212FD3x19z9sWBHDJACbC00B75E",
-  "refresh_token": "cZ+hszy8vC+t0ZPiH8XGmKIldKb7e1chf93O2eb1nvtogL55EtKTSiZTYA54pkQbquLz1cm8JjysY7t2kfOmKW4DyEYkrIZTwc4R7mIeqzRepi+9XoPD5Kc6vt5F5X5TqlbhzLi6YdqCbjYy/AMNT5uqsKm4aALpD0zKtiEdN3hexFjos15cyyiF9pDgC2gnfy5OpSCz7DCsHgfGl067HENXMdKci0MAUWThfBy/jw8kvKxMs2NlpTTav2jVmuQYeI7XGaQ2GMx5+ExM4I8un4U2aj52S5m32xQ7Nvz6DC7r9dX7B7ufnM9D83hQu1ODfrEwmvOyU6vMiyDkshPLVSo+fH80OqTFAQihJvpGdJm+45MXpjH6N3bVSC1nAIKM/vrWqvNmBIJ7EFLxv5Lw/8dkx9XBW2f/aXlyUmNtU4PDzYt9+5HDJH+FykT100MQuG4LYrgoVi/JHHvlDY5zwiSpGG0SvKFEPuzbdzW/9E6NapvMSol9Uf39tT/qpJ4exVd9Tz3CYM/Bv64WHUSN5MuQtUqSbhFBvWlt9kheuvxVBNQoHzGu068UVoOIKQNZiig3hBChDimilng0Beawb4qc2Uw4M/rv9WTQD8TkQ8Fak3XpUs94IvaLlbsi2Fk8IJXBsM/lrv43QlAWyGgLF8idUCxoOhOl8d3ILraiTyXtulLpC3/JNA7ALV+V8Wu1AA4w8YtgvE88uAMDkB2cUpJcXRzdFajqE778ZMjUGrab2HUGkbp9SyXUP7MD4WfxiFg9ZjhOFQyiVggHZmpExyK48EsrLGnFLc/5amF1jzK9YCFV+5rXH+ptXOg1Hg44zaUnPwkMWX+h/O2NjPgYmQK0m16krLU/FJ/K21XBW6otVNIDOY4DV6IaXi9raEiwXUsAvDfVJ6g=212FD3x19z9sWBHDJACbC00B75E",
-  "scope": "PlaceTrades AccountAccess MoveMoney",
-  "expires_in": 1800,
-  "refresh_token_expires_in": 7776000,
-  "token_type": "Bearer"
-}
-*/
-
-/*
-POST https://api.tdameritrade.com/v1/oauth2/token
-
-body:
-
-grant_type=refresh_token
-&refresh_token=cZ%2Bhszy8vC%2Bt0ZPiH8XGmKIldKb7e1chf93O2eb1nvtogL55EtKTSiZTYA54pkQbquLz1cm8JjysY7t2kfOmKW4DyEYkrIZTwc4R7mIeqzRepi%2B9XoPD5Kc6vt5F5X5TqlbhzLi6YdqCbjYy%2FAMNT5uqsKm4aALpD0zKtiEdN3hexFjos15cyyiF9pDgC2gnfy5OpSCz7DCsHgfGl067HENXMdKci0MAUWThfBy%2Fjw8kvKxMs2NlpTTav2jVmuQYeI7XGaQ2GMx5%2BExM4I8un4U2aj52S5m32xQ7Nvz6DC7r9dX7B7ufnM9D83hQu1ODfrEwmvOyU6vMiyDkshPLVSo%2BfH80OqTFAQihJvpGdJm%2B45MXpjH6N3bVSC1nAIKM%2FvrWqvNmBIJ7EFLxv5Lw%2F8dkx9XBW2f%2FaXlyUmNtU4PDzYt9%2B5HDJH%2BFykT100MQuG4LYrgoVi%2FJHHvlDY5zwiSpGG0SvKFEPuzbdzW%2F9E6NapvMSol9Uf39tT%2FqpJ4exVd9Tz3CYM%2FBv64WHUSN5MuQtUqSbhFBvWlt9kheuvxVBNQoHzGu068UVoOIKQNZiig3hBChDimilng0Beawb4qc2Uw4M%2Frv9WTQD8TkQ8Fak3XpUs94IvaLlbsi2Fk8IJXBsM%2Flrv43QlAWyGgLF8idUCxoOhOl8d3ILraiTyXtulLpC3%2FJNA7ALV%2BV8Wu1AA4w8YtgvE88uAMDkB2cUpJcXRzdFajqE778ZMjUGrab2HUGkbp9SyXUP7MD4WfxiFg9ZjhOFQyiVggHZmpExyK48EsrLGnFLc%2F5amF1jzK9YCFV%2B5rXH%2BptXOg1Hg44zaUnPwkMWX%2Bh%2FO2NjPgYmQK0m16krLU%2FFJ%2FK21XBW6otVNIDOY4DV6IaXi9raEiwXUsAvDfVJ6g%3D212FD3x19z9sWBHDJACbC00B75E
-&client_id=2GYLNACFVP5FVOFFI1TYKL1X8MKP605Y
-*/

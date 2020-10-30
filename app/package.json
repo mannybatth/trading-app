@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@alpacahq/alpaca-trade-api": "^1.4.2",
+    "@polka/redirect": "^1.0.0-next.0",
     "@polka/send-type": "^0.5.2",
+    "@primer/css": "^15.2.0",
     "body-parser": "^1.19.0",
     "compression": "^1.7.1",
     "firebase": "^7.24.0",
@@ -43,7 +45,6 @@
     "svelte": "^3.17.3",
     "svelte-check": "^1.0.46",
     "svelte-loader": "^2.9.0",
-    "svelte-material-ui": "^1.0.0",
     "svelte-preprocess": "^4.3.0",
     "sveltefire": "^0.1.5",
     "ts-jest": "^26.4.2",

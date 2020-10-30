@@ -4,7 +4,7 @@ import { db, firebaseAdmin } from '../firebase-admin';
 import type { Clock, Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-models';
 import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
-import { FinnhubQuote, getFinnhubQuote, isValidPrice } from './quote';
+import { getQuote, isValidPrice } from './quote';
 
 const round = (value: number, decimals: number) => {
   return Number(Math.round((value + 'e' + decimals) as any) + 'e-' + decimals);
@@ -49,7 +49,6 @@ export class AlpacaClient {
       console.log(`State changed to ${newState}`);
     });
     socket.onOrderUpdate((message: OrderUpdateMessage) => {
-      console.log('');
       console.log(
         colors.fg.Cyan,
         `Order updates: ${JSON.stringify({
@@ -135,7 +134,8 @@ export class AlpacaClient {
         client_order_id: `${discriminator}-${alert.symbol}-${new Date().getTime()}`,
       });
     } catch (err) {
-      console.log(colors.fg.Red, 'ERROR creating order:', (err && err.error) || err);
+      const error = err?.error?.message || err?.message || err;
+      console.log(colors.fg.Red, 'ERROR creating order:', error);
     }
   }
 
@@ -143,19 +143,17 @@ export class AlpacaClient {
     let entryPosition: FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>,
       entryPositionSnapshot: FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
       stockPosition: StockPosition,
-      quote: FinnhubQuote,
-      // quote: Quote,
+      quote: { bid: number; ask: number },
       orders: Order[];
     try {
       [{ doc: entryPosition, snapshot: entryPositionSnapshot }, stockPosition, quote, orders] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
         this.findStockPosition(alert.symbol),
-        getFinnhubQuote(alert.symbol),
-        // this.client.lastQuote(alert.symbol),
+        getQuote(alert.symbol, this.client),
         this.client.getOrders(),
       ]);
     } catch (err) {
-      const error = (err && err.error) || err;
+      const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'ERROR getting data for sell order', error);
       return;
     }
@@ -167,6 +165,7 @@ export class AlpacaClient {
       return;
     }
 
+    console.log('entryPosition', entryPosition.data());
     console.log('stockPosition', stockPosition);
     console.log('quote', quote);
 
@@ -197,8 +196,7 @@ export class AlpacaClient {
           qty: qty,
           side: 'sell',
           type: 'limit',
-          limit_price: quote.c,
-          // limit_price: quote.last.bidprice,
+          limit_price: quote.bid,
           time_in_force: 'day',
           extended_hours: true,
         });
@@ -212,7 +210,7 @@ export class AlpacaClient {
     try {
       await executeSellOrder();
     } catch (err) {
-      const error = (err && err.error) || err;
+      const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'ERROR creating order to close position', error);
 
       if (error && error.message && error.message.includes('insufficient qty available for order')) {
@@ -221,7 +219,8 @@ export class AlpacaClient {
           try {
             await executeSellOrder();
           } catch (err) {
-            console.log(colors.fg.Red, 'ERROR! creating order to close position on 2nd try', (err && err.error) || err);
+            const error2 = err?.error?.message || err?.message || err;
+            console.log(colors.fg.Red, 'ERROR! creating order to close position on 2nd try', error2);
           }
         }, 3000);
       }
