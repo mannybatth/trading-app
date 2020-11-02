@@ -48,10 +48,10 @@ export class AlpacaClient {
     socket.onStateChange((newState: string) => {
       console.log(`State changed to ${newState}`);
     });
-    socket.onOrderUpdate((message: OrderUpdateMessage) => {
+    socket.onOrderUpdate(async (message: OrderUpdateMessage) => {
       console.log(
         colors.fg.Cyan,
-        `Order updates: ${JSON.stringify({
+        `Order update: ${JSON.stringify({
           event: message.event,
           side: message.order.side,
           symbol: message.order.symbol,
@@ -62,20 +62,32 @@ export class AlpacaClient {
           client_order_id: message.order.client_order_id,
         })}`
       );
-      if (message.event === 'fill') {
-        const qty = parseFloat(message.order.filled_qty);
+      if (message?.event === 'fill') {
+        const qty = parseFloat(message?.order?.filled_qty);
 
         if (qty > 0 && message.order.side === 'buy') {
-          const clientId: string = message.order.client_order_id;
+          const clientId: string = message?.order?.client_order_id;
           const [discriminator, symbol] = clientId.split('-');
 
-          db.collection('positions').add({
-            discriminator,
-            symbol,
-            quantity: qty,
-            price: parseFloat(message.price),
-            created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
-          });
+          const { doc: entryPosition, fromDiscriminator } = await this.findEntryPosition(symbol, discriminator);
+          if (fromDiscriminator && entryPosition) {
+            entryPosition.ref.update({
+              discriminator,
+              symbol,
+              quantity: qty + entryPosition.data().quantity,
+              price: parseFloat(message.price),
+              created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+            });
+          } else {
+            db.collection('positions').add({
+              discriminator,
+              symbol,
+              quantity: qty,
+              price: parseFloat(message.price),
+              created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+          db.doc(`alerts/${discriminator}-${symbol}`).delete();
         }
       }
     });
@@ -97,10 +109,26 @@ export class AlpacaClient {
       return;
     }
 
-    const validInfo = await isValidPrice(alert.symbol, alert.price, this.client);
+    const [validInfo, alertDoc] = await Promise.all([
+      isValidPrice(alert.symbol, alert.price, this.client),
+      db.doc(`alerts/${discriminator}-${alert.symbol}`).get(),
+    ]);
+
     if (!validInfo.valid) {
       console.log(colors.fg.Red, 'Price is not valid', alert.price, alert.symbol, 'bid:', validInfo.bid, 'ask:', validInfo.ask);
       return;
+    }
+
+    const timeNow = new Date().getTime();
+    if (alertDoc.exists) {
+      const created: number = alertDoc.data().created.seconds;
+      const secondsNow = timeNow / 1000;
+
+      // 30 min wait
+      if (secondsNow - created < 1800) {
+        console.log(colors.fg.Yellow, 'Alert already exists for this symbol from user, ignoring alert');
+        return;
+      }
     }
 
     const calc = calcProfitLoss(alert.price);
@@ -116,6 +144,7 @@ export class AlpacaClient {
         'stop limit:',
         calc.loss - validInfo.spread
       );
+      const clientId = `${discriminator}-${alert.symbol}-${timeNow}`;
       await this.client.createOrder({
         symbol: alert.symbol,
         qty: quantity,
@@ -131,7 +160,14 @@ export class AlpacaClient {
           stop_price: calc.loss,
           limit_price: calc.loss - validInfo.spread,
         },
-        client_order_id: `${discriminator}-${alert.symbol}-${new Date().getTime()}`,
+        client_order_id: clientId,
+      });
+
+      db.doc(`alerts/${discriminator}-${alert.symbol}`).set({
+        ...alert,
+        discriminator,
+        quantity,
+        created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
       });
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
@@ -160,12 +196,12 @@ export class AlpacaClient {
 
     if (!stockPosition) {
       console.log('Did not find stock position, cancelling any open orders', alert, discriminator);
-      this.cancelOrders(orders, alert.symbol);
+      this.cancelOrders(orders, alert.symbol, discriminator);
       entryPositionSnapshot.docs.forEach((doc) => doc.ref.delete());
       return;
     }
 
-    console.log('entryPosition', entryPosition.data());
+    console.log('entryPosition', entryPosition?.data());
     console.log('stockPosition', stockPosition);
     console.log('quote', quote);
 
@@ -175,11 +211,11 @@ export class AlpacaClient {
 
     const clock = await this.client.getClock();
     const stockPositionQty = parseFloat(stockPosition.qty);
-    const qty = entryPosition ? entryPosition.data().quantity : stockPositionQty;
+    const qty = entryPosition ? Math.min(stockPositionQty, entryPosition.data().quantity) : stockPositionQty;
     const isFullPosition = qty === stockPositionQty;
 
     // Cancel existing orders
-    await this.cancelOrders(orders, alert.symbol, !isFullPosition && qty);
+    await this.cancelOrders(orders, alert.symbol, discriminator, !isFullPosition && qty);
 
     const executeSellOrder = async () => {
       if (clock.is_open) {
@@ -213,7 +249,7 @@ export class AlpacaClient {
       const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'ERROR creating order to close position', error);
 
-      if (error && error.message && error.message.includes('insufficient qty available for order')) {
+      if (error && error.includes('insufficient qty available for order')) {
         setTimeout(async () => {
           console.log('Trying sell order again now after 3s', alert, discriminator);
           try {
@@ -235,12 +271,14 @@ export class AlpacaClient {
         return {
           doc: doc as ReturnType,
           snapshot: snapshot as FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
+          fromDiscriminator: true,
         };
       }
     }
     return {
       doc: snapshot.size > 0 ? (snapshot.docs[0] as ReturnType) : null,
       snapshot: snapshot as FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
+      fromDiscriminator: false,
     };
   }
 
@@ -255,7 +293,8 @@ export class AlpacaClient {
   /*
     Could we return the id here so we can replace the order instead?
   */
-  async cancelOrders(orders: Order[], symbol: string, qty?: number) {
+  async cancelOrders(orders: Order[], symbol: string, discriminator: string, qty?: number) {
+    db.doc(`alerts/${discriminator}-${symbol}`).delete();
     if (qty) {
       const foundOrder = orders.find((order) => order.symbol === symbol && parseFloat(order.qty) === qty);
       if (foundOrder) {

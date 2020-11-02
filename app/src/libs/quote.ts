@@ -6,7 +6,7 @@ import type { Quote } from '../models/alpaca-models';
 import { colors } from '../models/colors';
 import { doRefreshToken } from '../routes/td/refresh-token.endpoint';
 
-export const quoteOption = 'td';
+export const quoteOption = 'td'; // td, finnhub, alpaca
 
 export interface FinnhubQuote {
   c: number;
@@ -25,16 +25,24 @@ export const isValidPrice = async (
   try {
     const quote = await getQuote(symbol, client);
     const spread = quote.ask - quote.bid;
-    const valid = price < quote.ask + spread * 2 && price > quote.bid - spread * 2;
+    const valid = () => {
+      if (price > quote.ask) {
+        return quote.ask * 1.05 >= price;
+      } else if (price < quote.bid) {
+        return quote.bid * 0.985 <= price;
+      }
+      return true;
+    };
 
     return {
-      valid,
+      valid: valid(),
       bid: quote.bid,
       ask: quote.ask,
       spread,
     };
   } catch (err) {
-    console.log(colors.fg.Red, `Failed to validate ${quoteOption} quote`, symbol);
+    const error = err?.error?.message || err?.message || err;
+    console.log(colors.fg.Red, `Failed to validate ${quoteOption} quote`, symbol, error);
     return {
       valid: false,
     };
@@ -87,7 +95,7 @@ export const getTdQuote = async (symbol: string): Promise<{ bid: number; ask: nu
   const tokenDataDoc = await db.doc('app-config/tokens').get();
   const tokenData = tokenDataDoc.data();
   const secondsNow = new Date().getTime() / 1000;
-  const tokenSeconds = tokenData.token_created.seconds;
+  const tokenSeconds: number = tokenData.token_created.seconds;
   const diff = secondsNow - tokenSeconds;
 
   let accessToken = tokenData.access_token;
@@ -105,7 +113,7 @@ export const getTdQuote = async (symbol: string): Promise<{ bid: number; ask: nu
     symbol: json[symbol]?.symbol,
     bidPrice: json[symbol]?.bidPrice,
     askPrice: json[symbol]?.askPrice,
-    lastPrice: json[symbol]?.lastPrice,
+    mark: json[symbol]?.mark,
     delayed: json[symbol]?.delayed,
   };
   console.log('tdQuote', quote);

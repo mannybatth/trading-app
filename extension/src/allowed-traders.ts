@@ -29,7 +29,7 @@ export default [
   '7503', // Kjaerbye
   '7050', // salzburry
   '2284', // Serpico (not 70% win rate)
-  '0550', // ApeTheMonkey
+  // '0550', // ApeTheMonkey
   '0083', // Kevin (Momentum)
   '9089', // Xtrades Option Guru
   '2237', // FunTrade
@@ -40,4 +40,6 @@ export default [
   '2339', // MegaBull
   '7873', // EnterpriseUS
   '5603', // darkestly
+  '4214', // Father
+  '3426', // pjmorin20 | TAC
 ];
