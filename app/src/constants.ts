@@ -3,8 +3,13 @@ export const maxPositionSize = 500;
 export const profitPercent = 0.15;
 export const stopLossPercent = 0.1;
 
-export const alpacaApiKey = 'PKIXX85X7LVE6O735ZQ8';
-export const alpacaApiSecret = 'RncOWyfq9LsoKNoTUO6re24oQDlLyfrzekSYDFMX';
+export const alpacaApiKey = 'PKQIKF62RZ1FIUULIAEE';
+export const alpacaApiSecret = 'I36Q4tnZ6WkMh2IavPJKUOLUNzZgboy1okdKLmAO';
+
+export const extendedHours = [
+  ['09:00', '09:30'],
+  ['16:00', '18:00'],
+];
 
 export const finnhubSpreadPercent = 0.015;
 export const finnhubApiUrl = 'https://finnhub.io/api';

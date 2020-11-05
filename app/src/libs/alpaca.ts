@@ -1,5 +1,5 @@
 import Alpaca from '@alpacahq/alpaca-trade-api';
-import { alpacaApiKey, alpacaApiSecret, maxPositionSize, profitPercent, stopLossPercent } from '../constants';
+import { alpacaApiKey, alpacaApiSecret, extendedHours, maxPositionSize, profitPercent, stopLossPercent } from '../constants';
 import { db, firebaseAdmin } from '../firebase-admin';
 import type { Clock, Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-models';
 import { colors } from '../models/colors';
@@ -25,8 +25,13 @@ const calcQuantity = (price: number) => {
   return Math.floor(maxPositionSize / price);
 };
 
+const isInRange = (value: string, range: string[]) => {
+  return value >= range[0] && value <= range[1];
+};
+
 export class AlpacaClient {
   public client: Alpaca;
+  public pendingAlerts = new Map<string, { alert: Alert; discriminator: string }>();
 
   init() {
     this.client = new Alpaca({
@@ -58,6 +63,7 @@ export class AlpacaClient {
           filled_qty: message.order.filled_qty,
           order_qty: message.order.qty,
           order_type: message.order.order_type,
+          filled_avg_price: message.order.filled_avg_price,
           limit_price: message.order.limit_price,
           client_order_id: message.order.client_order_id,
         })}`
@@ -94,8 +100,20 @@ export class AlpacaClient {
     socket.connect();
   }
 
-  sendOrder(alert: Alert, discriminator: string) {
-    return alert.action === 'STC' || alert.action === 'STO' ? this.sellOrder(alert, discriminator) : this.buyOrder(alert, discriminator);
+  async sendOrder(alert: Alert, discriminator: string) {
+    if (this.isAlertPending(alert, discriminator)) {
+      console.log(colors.fg.Yellow, 'Skipping alert, pending alert already exists');
+      return;
+    }
+
+    this.addAlertToPending(alert, discriminator);
+    const result =
+      alert.action === 'STC' || alert.action === 'STO'
+        ? await this.sellOrder(alert, discriminator)
+        : await this.buyOrder(alert, discriminator);
+    this.removePendingAlert(alert, discriminator);
+
+    return result;
   }
 
   async buyOrder(alert: Alert, discriminator: string) {
@@ -133,12 +151,15 @@ export class AlpacaClient {
 
     const calc = calcProfitLoss(alert.price);
     const quantity = calcQuantity(alert.price);
+
+    // add some cushion
+    const limitPrice = alert.price + (alert.price > 2 ? 0.03 : 0.01);
     try {
       console.log(
         'Creating buy order',
         alert.symbol,
         'limit:',
-        alert.price,
+        limitPrice,
         'profit:',
         calc.profit,
         'stop limit:',
@@ -150,7 +171,7 @@ export class AlpacaClient {
         qty: quantity,
         side: 'buy',
         type: 'limit',
-        limit_price: alert.price,
+        limit_price: limitPrice,
         time_in_force: 'gtc',
         order_class: 'bracket',
         take_profit: {
@@ -209,10 +230,28 @@ export class AlpacaClient {
       console.log('Could not find entry position in db', alert, discriminator);
     }
 
-    const clock = await this.client.getClock();
+    const clock: Clock = await this.client.getClock();
+    const time = new Date(clock.timestamp);
+    const timeStr = `${time.getHours()}:${time.getMinutes()}`;
+
     const stockPositionQty = parseFloat(stockPosition.qty);
     const qty = entryPosition ? Math.min(stockPositionQty, entryPosition.data().quantity) : stockPositionQty;
     const isFullPosition = qty === stockPositionQty;
+    const isExtendedHours = isInRange(timeStr, extendedHours[0]) || isInRange(timeStr, extendedHours[1]);
+    console.log('isExtendedHours', isExtendedHours);
+
+    if (!clock.is_open && !isExtendedHours) {
+      // queue up this sell order
+      console.log(colors.fg.Magenta, 'Queuing up sell order', alert, discriminator);
+
+      db.doc(`queue/${alert.action}-${discriminator}-${alert.symbol}`).set({
+        ...alert,
+        discriminator,
+        quantity: qty,
+        created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+      });
+      return;
+    }
 
     // Cancel existing orders
     await this.cancelOrders(orders, alert.symbol, discriminator, !isFullPosition && qty);
@@ -234,7 +273,7 @@ export class AlpacaClient {
           type: 'limit',
           limit_price: quote.bid,
           time_in_force: 'day',
-          extended_hours: true,
+          extended_hours: isExtendedHours,
         });
       }
 
@@ -311,6 +350,21 @@ export class AlpacaClient {
         })
       );
     }
+  }
+
+  isAlertPending(alert: Alert, discriminator: string) {
+    return this.pendingAlerts.has(`${alert.action}-${discriminator}-${alert.symbol}`);
+  }
+
+  addAlertToPending(alert: Alert, discriminator: string) {
+    this.pendingAlerts.set(`${alert.action}-${discriminator}-${alert.symbol}`, {
+      alert,
+      discriminator,
+    });
+  }
+
+  removePendingAlert(alert: Alert, discriminator: string) {
+    this.pendingAlerts.delete(`${alert.action}-${discriminator}-${alert.symbol}`);
   }
 }
 

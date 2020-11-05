@@ -65,7 +65,10 @@ export class MessageWatcher {
 
     const body = document.documentElement || document.body;
     this.bodyObserver = new MutationObserver((mutationsList, observer) => {
-      const chatMessagesElement = document.getElementById('chat-messages');
+      // const chatMessagesElement = document.getElementById('chat-messages');
+      const chatMessagesElement: HTMLElement = document.querySelector(
+        '[data-list-id="chat-messages"]'
+      );
       if (chatMessagesElement) {
         this.watchChatMessages(chatMessagesElement);
       }

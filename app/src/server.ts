@@ -6,6 +6,7 @@ import https from 'https';
 import polka from 'polka';
 import sirv from 'sirv';
 import { alpaca } from './libs/alpaca';
+import './queue-cron';
 
 const { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === 'development';
