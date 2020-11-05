@@ -9,7 +9,7 @@ rule.dayOfWeek = new schedule.Range(1, 5);
 // rule.hour = 2;
 // rule.minute = 24;
 rule.hour = new schedule.Range(9, 15);
-rule.minute = 30;
+rule.minute = [0, 30];
 
 schedule.scheduleJob(rule, async () => {
   console.log(colors.fg.Green, 'CHECKING QUEUE', new Date().toLocaleTimeString());

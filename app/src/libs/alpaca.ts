@@ -152,8 +152,19 @@ export class AlpacaClient {
     const calc = calcProfitLoss(alert.price);
     const quantity = calcQuantity(alert.price);
 
+    let limitPrice = validInfo.mark || alert.price;
+
     // add some cushion
-    const limitPrice = alert.price + (alert.price > 2 ? 0.03 : 0.01);
+    if (alert.price > 1) {
+      limitPrice = limitPrice + 0.004;
+    } else if (alert.price > 2) {
+      limitPrice = limitPrice + 0.01;
+    } else if (alert.price > 5) {
+      limitPrice = limitPrice + 0.03;
+    } else if (alert.price > 10) {
+      limitPrice = limitPrice + 0.04;
+    }
+
     try {
       console.log(
         'Creating buy order',
@@ -242,14 +253,7 @@ export class AlpacaClient {
 
     if (!clock.is_open && !isExtendedHours) {
       // queue up this sell order
-      console.log(colors.fg.Magenta, 'Queuing up sell order', alert, discriminator);
-
-      db.doc(`queue/${alert.action}-${discriminator}-${alert.symbol}`).set({
-        ...alert,
-        discriminator,
-        quantity: qty,
-        created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
-      });
+      this.addToQueue(alert, discriminator, qty);
       return;
     }
 
@@ -296,8 +300,11 @@ export class AlpacaClient {
           } catch (err) {
             const error2 = err?.error?.message || err?.message || err;
             console.log(colors.fg.Red, 'ERROR! creating order to close position on 2nd try', error2);
+            this.addToQueue(alert, discriminator, qty);
           }
         }, 3000);
+      } else {
+        this.addToQueue(alert, discriminator, qty);
       }
     }
   }
@@ -365,6 +372,16 @@ export class AlpacaClient {
 
   removePendingAlert(alert: Alert, discriminator: string) {
     this.pendingAlerts.delete(`${alert.action}-${discriminator}-${alert.symbol}`);
+  }
+
+  addToQueue(alert: Alert, discriminator: string, quantity: number) {
+    console.log(colors.fg.Magenta, 'Queuing up order', alert, discriminator);
+    db.doc(`queue/${alert.action}-${discriminator}-${alert.symbol}`).set({
+      ...alert,
+      discriminator,
+      quantity,
+      created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+    });
   }
 }
 

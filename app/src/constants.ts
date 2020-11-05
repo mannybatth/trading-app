@@ -19,7 +19,3 @@ export const ameritradeClientId = '2GYLNACFVP5FVOFFI1TYKL1X8MKP605Y';
 export const ameritradeApiUrl = 'https://api.tdameritrade.com';
 export const ameritradeAuthUrl = 'https://auth.tdameritrade.com/auth';
 export const ameritradeTokenUrl = `${ameritradeApiUrl}/v1/oauth2/token`;
-export const ameritradeTokens = {
-  accessToken: '',
-  refreshToken: '',
-};

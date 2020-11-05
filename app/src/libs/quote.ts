@@ -21,7 +21,7 @@ export const isValidPrice = async (
   symbol: string,
   price: number,
   client: Alpaca
-): Promise<{ valid: boolean; bid?: number; ask?: number; spread?: number }> => {
+): Promise<{ valid: boolean; bid?: number; ask?: number; mark?: number; spread?: number }> => {
   try {
     const quote = await getQuote(symbol, client);
     const spread = quote.ask - quote.bid;
@@ -38,6 +38,7 @@ export const isValidPrice = async (
       valid: valid(),
       bid: quote.bid,
       ask: quote.ask,
+      mark: quote.mark,
       spread,
     };
   } catch (err) {
@@ -49,7 +50,7 @@ export const isValidPrice = async (
   }
 };
 
-export const getQuote = async (symbol: string, client: Alpaca): Promise<{ bid: number; ask: number }> => {
+export const getQuote = async (symbol: string, client: Alpaca): Promise<{ bid: number; ask: number; mark?: number }> => {
   let quote: { bid: number; ask: number };
   if (quoteOption === 'td') {
     quote = await getTdQuote(symbol);
@@ -91,7 +92,7 @@ export const getAlpacaQuote = async (symbol: string, client: Alpaca): Promise<{ 
   };
 };
 
-export const getTdQuote = async (symbol: string): Promise<{ bid: number; ask: number }> => {
+export const getTdQuote = async (symbol: string): Promise<{ bid: number; ask: number; mark?: number }> => {
   const tokenDataDoc = await db.doc('app-config/tokens').get();
   const tokenData = tokenDataDoc.data();
   const secondsNow = new Date().getTime() / 1000;
@@ -121,5 +122,6 @@ export const getTdQuote = async (symbol: string): Promise<{ bid: number; ask: nu
   return {
     bid: quote.bidPrice || 0,
     ask: quote.askPrice || 0,
+    mark: quote.mark || 0,
   };
 };

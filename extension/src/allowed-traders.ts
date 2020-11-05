@@ -42,4 +42,5 @@ export default [
   '5603', // darkestly
   '4214', // Father
   '3426', // pjmorin20 | TAC
+  '3814', // metaprox
 ];
