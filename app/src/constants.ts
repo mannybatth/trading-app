@@ -19,3 +19,9 @@ export const ameritradeClientId = '2GYLNACFVP5FVOFFI1TYKL1X8MKP605Y';
 export const ameritradeApiUrl = 'https://api.tdameritrade.com';
 export const ameritradeAuthUrl = 'https://auth.tdameritrade.com/auth';
 export const ameritradeTokenUrl = `${ameritradeApiUrl}/v1/oauth2/token`;
+
+export const etradeApiKey = '4f2a5a05360dfbdb670648472697a65a';
+export const etradeApiSecret = '3be30244a3d835dcc8bcdea52da6dc2fe0ae354ccd26eaed70dbca902294e85d';
+export const etradeApiUrl = 'https://api.etrade.com';
+export const etradeAuthUrl = 'https://us.etrade.com';
+export const etradeSandboxUrl = 'https://apisb.etrade.com';

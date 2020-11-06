@@ -5,6 +5,7 @@
 <nav class="UnderlineNav">
   <div class="UnderlineNav-body" role="tablist">
     <a class="UnderlineNav-item" role="tab" type="button" href="." aria-selected="{segment === undefined}">Home</a>
+    <a class="UnderlineNav-item" role="tab" type="button" href="etrade" aria-selected="{segment === 'etrade'}">ETrade</a>
     <a class="UnderlineNav-item" role="tab" type="button" href="td" aria-selected="{segment === 'td'}">TD Ameritrade</a>
   </div>
 </nav>
