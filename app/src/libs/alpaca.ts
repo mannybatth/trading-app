@@ -1,5 +1,12 @@
 import Alpaca from '@alpacahq/alpaca-trade-api';
-import { alpacaApiKey, alpacaApiSecret, extendedHours, maxPositionSize, profitPercent, stopLossPercent } from '../constants';
+import {
+  alpacaApiKey,
+  alpacaApiSecret,
+  extendedHours,
+  maxPositionSize,
+  profitPercent,
+  stopLossPercent,
+} from '../constants';
 import { db, firebaseAdmin } from '../firebase-admin';
 import type { Clock, Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-models';
 import { colors } from '../models/colors';
@@ -75,7 +82,10 @@ export class AlpacaClient {
           const clientId: string = message?.order?.client_order_id;
           const [discriminator, symbol] = clientId.split('-');
 
-          const { doc: entryPosition, fromDiscriminator } = await this.findEntryPosition(symbol, discriminator);
+          const { doc: entryPosition, fromDiscriminator } = await this.findEntryPosition(
+            symbol,
+            discriminator
+          );
           if (fromDiscriminator && entryPosition) {
             entryPosition.ref.update({
               discriminator,
@@ -117,9 +127,9 @@ export class AlpacaClient {
   }
 
   async buyOrder(alert: Alert, discriminator: string) {
-    if (alert.risky) {
-      return;
-    }
+    // if (alert.risky) {
+    //   return;
+    // }
 
     const clock: Clock = await this.client.getClock();
     if (!clock.is_open) {
@@ -133,7 +143,16 @@ export class AlpacaClient {
     ]);
 
     if (!validInfo.valid) {
-      console.log(colors.fg.Red, 'Price is not valid', alert.price, alert.symbol, 'bid:', validInfo.bid, 'ask:', validInfo.ask);
+      console.log(
+        colors.fg.Red,
+        'Price is not valid',
+        alert.price,
+        alert.symbol,
+        'bid:',
+        validInfo.bid,
+        'ask:',
+        validInfo.ask
+      );
       return;
     }
 
@@ -144,7 +163,10 @@ export class AlpacaClient {
 
       // 30 min wait
       if (secondsNow - created < 1800) {
-        console.log(colors.fg.Yellow, 'Alert already exists for this symbol from user, ignoring alert');
+        console.log(
+          colors.fg.Yellow,
+          'Alert already exists for this symbol from user, ignoring alert'
+        );
         return;
       }
     }
@@ -214,7 +236,12 @@ export class AlpacaClient {
       quote: { bid: number; ask: number },
       orders: Order[];
     try {
-      [{ doc: entryPosition, snapshot: entryPositionSnapshot }, stockPosition, quote, orders] = await Promise.all([
+      [
+        { doc: entryPosition, snapshot: entryPositionSnapshot },
+        stockPosition,
+        quote,
+        orders,
+      ] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
         this.findStockPosition(alert.symbol),
         getQuote(alert.symbol, this.client),
@@ -246,9 +273,12 @@ export class AlpacaClient {
     const timeStr = `${time.getHours()}:${time.getMinutes()}`;
 
     const stockPositionQty = parseFloat(stockPosition.qty);
-    const qty = entryPosition ? Math.min(stockPositionQty, entryPosition.data().quantity) : stockPositionQty;
+    const qty = entryPosition
+      ? Math.min(stockPositionQty, entryPosition.data().quantity)
+      : stockPositionQty;
     const isFullPosition = qty === stockPositionQty;
-    const isExtendedHours = isInRange(timeStr, extendedHours[0]) || isInRange(timeStr, extendedHours[1]);
+    const isExtendedHours =
+      isInRange(timeStr, extendedHours[0]) || isInRange(timeStr, extendedHours[1]);
     console.log('isExtendedHours', isExtendedHours);
 
     if (!clock.is_open && !isExtendedHours) {
@@ -282,6 +312,7 @@ export class AlpacaClient {
       }
 
       entryPosition && entryPosition.ref.delete();
+      this.removeFromQueue(alert, discriminator);
       console.log('Created order to close position', alert, discriminator);
     };
 
@@ -299,7 +330,11 @@ export class AlpacaClient {
             await executeSellOrder();
           } catch (err) {
             const error2 = err?.error?.message || err?.message || err;
-            console.log(colors.fg.Red, 'ERROR! creating order to close position on 2nd try', error2);
+            console.log(
+              colors.fg.Red,
+              'ERROR! creating order to close position on 2nd try',
+              error2
+            );
             this.addToQueue(alert, discriminator, qty);
           }
         }, 3000);
@@ -342,7 +377,9 @@ export class AlpacaClient {
   async cancelOrders(orders: Order[], symbol: string, discriminator: string, qty?: number) {
     db.doc(`alerts/${discriminator}-${symbol}`).delete();
     if (qty) {
-      const foundOrder = orders.find((order) => order.symbol === symbol && parseFloat(order.qty) === qty);
+      const foundOrder = orders.find(
+        (order) => order.symbol === symbol && parseFloat(order.qty) === qty
+      );
       if (foundOrder) {
         console.log('cancelling order', foundOrder.id);
         await this.client.cancelOrder(foundOrder.id);
@@ -382,6 +419,15 @@ export class AlpacaClient {
       quantity,
       created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
     });
+  }
+
+  async removeFromQueue(alert: Alert, discriminator: string) {
+    const doc = db.doc(`queue/${alert.action}-${discriminator}-${alert.symbol}`);
+    const data = await doc.get();
+    if (data.exists) {
+      console.log(colors.fg.Magenta, 'Removing order from queue', alert, discriminator);
+      doc.delete();
+    }
   }
 }
 

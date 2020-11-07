@@ -40,6 +40,10 @@
       method: 'GET',
     });
   }
+
+  function getAccounts() {
+    eTradeClient.getAccounts();
+  }
 </script>
 
 <svelte:head>
@@ -63,6 +67,8 @@
       </div>
     </div>
   </details>
+
+  <button class="btn btn-primary my-2 mr-2" type="button" on:click="{getAccounts}">Get Accounts</button>
 
   <!-- Only shown when loading -->
   <div slot="loading">⌛</div>

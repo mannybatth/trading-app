@@ -1,5 +1,5 @@
 import 'isomorphic-fetch';
-import { API_URL, etradeApiUrl } from '../../constants';
+import { API_URL, etradeApiUrl, etradeSandboxUrl } from '../../constants';
 import type { ETradeOAuthToken, ETradeRequestOptions } from '../../models/etrade-models';
 
 export class ETradeClient {
@@ -9,7 +9,6 @@ export class ETradeClient {
       url,
       {
         method: 'GET',
-        headers: { Accept: 'application/json' },
       },
       { oauthCallback: true, useJSON: false }
     );
@@ -22,11 +21,23 @@ export class ETradeClient {
       url,
       {
         method: 'GET',
-        headers: { Accept: 'application/json' },
       },
       { oauthToken, oauthTokenSecret, verifyCode, useJSON: false }
     );
     return response as ETradeOAuthToken;
+  }
+
+  public async getAccounts() {
+    const url = `${etradeSandboxUrl}/v1/accounts/list.json`;
+    const response = await this._send(
+      url,
+      {
+        method: 'GET',
+      },
+      { useJSON: true }
+    );
+    console.log('getAccounts', response);
+    return response;
   }
 
   private async _send(url: string, request: RequestInit, options: ETradeRequestOptions) {

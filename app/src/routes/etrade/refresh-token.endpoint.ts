@@ -1,8 +1,8 @@
 import send from '@polka/send-type';
 import { etradeApiUrl } from '../../constants';
 import { db, firebaseAdmin } from '../../firebase-admin';
+import { sendRequest } from '../../libs/etrade-request';
 import type { ETradeOAuthToken } from '../../models/etrade-models';
-import { sendRequest } from './etrade-request';
 
 export const doRefreshToken = async (oauthToken?: string, oauthTokenSecret?: string) => {
   if (!oauthToken || !oauthTokenSecret) {

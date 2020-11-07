@@ -2,8 +2,8 @@ import crypto from 'crypto';
 import 'isomorphic-fetch';
 import oauth_sign from 'oauth-sign';
 import querystring from 'querystring';
-import { etradeApiKey, etradeApiSecret } from '../../constants';
-import type { ETradeRequestOptions } from '../../models/etrade-models';
+import { etradeApiKey, etradeApiSecret } from '../constants';
+import type { ETradeRequestOptions } from '../models/etrade-models';
 
 const searchParams = (params: any, separator: string) => {
   return Object.keys(params)

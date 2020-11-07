@@ -25,7 +25,6 @@ schedule.scheduleJob(rule, async () => {
     const discriminator: string = data.discriminator;
     try {
       await alpaca.sendOrder(alert, discriminator);
-      doc.ref.delete();
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'Failed to send order in queue', alert, discriminator, error);

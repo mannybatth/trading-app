@@ -1,6 +1,6 @@
 import send from '@polka/send-type';
 import { db, firebaseAdmin } from '../../firebase-admin';
-import { sendRequest } from './etrade-request';
+import { sendRequest } from '../../libs/etrade-request';
 
 export async function post(req, res, next) {
   if (!req.body?.options?.oauthCallback && (!req.body?.options?.oauthToken || !req.body?.options?.oauthTokenSecret)) {
