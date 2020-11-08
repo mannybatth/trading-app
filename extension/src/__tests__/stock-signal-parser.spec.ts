@@ -303,6 +303,20 @@ const tests: AlertTest[] = [
       risky: true,
     },
   },
+  {
+    test: 'STC CGEN partial 1/2 @ 12.85',
+    expected: {
+      action: 'STC',
+      symbol: 'CGEN',
+      price: 12.85,
+      risky: false,
+    },
+  },
+  {
+    test:
+      'BABA recovered most of the gains .... Right at resistance and we will be super bullish if it can close above @ 300 today..',
+    expected: null,
+  },
 ];
 
 tests.map((alertTest) => {

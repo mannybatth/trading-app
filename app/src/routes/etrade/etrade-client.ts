@@ -40,6 +40,16 @@ export class ETradeClient {
     return response;
   }
 
+  public async refreshToken() {
+    const response = await fetch(`${API_URL}/etrade/refresh-token.endpoint`, {
+      method: 'GET',
+    });
+    if (response.status !== 200) {
+      throw response;
+    }
+    return response;
+  }
+
   private async _send(url: string, request: RequestInit, options: ETradeRequestOptions) {
     const proxyUrl = `${API_URL}/etrade/proxy.endpoint`;
     const response = await fetch(proxyUrl, {
@@ -51,6 +61,9 @@ export class ETradeClient {
         options,
       }),
     });
+    if (response.status !== 200) {
+      throw response;
+    }
     return await response.json();
   }
 }

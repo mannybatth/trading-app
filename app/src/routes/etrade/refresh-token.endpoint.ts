@@ -1,6 +1,6 @@
 import send from '@polka/send-type';
 import { etradeApiUrl } from '../../constants';
-import { db, firebaseAdmin } from '../../firebase-admin';
+import { db } from '../../firebase-admin';
 import { sendRequest } from '../../libs/etrade-request';
 import type { ETradeOAuthToken } from '../../models/etrade-models';
 
@@ -21,10 +21,12 @@ export const doRefreshToken = async (oauthToken?: string, oauthTokenSecret?: str
     { oauthToken, oauthTokenSecret, useJSON: false }
   );
 
-  db.doc('app-config/etrade-tokens').update({
-    ...response,
-    token_created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
-  });
+  console.log('refresh token', response);
+  // db.doc('app-config/etrade-tokens').update({
+  //   ...response,
+  //   token_created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+  //   token_last_used: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+  // });
 
   return response;
 };
@@ -34,6 +36,6 @@ export async function get(req, res, next) {
     const response = await doRefreshToken();
     send(res, 200, { response });
   } catch (err) {
-    send(res, 400, { error: err?.error?.message || err?.message || err });
+    send(res, err.status, err);
   }
 }

@@ -14,24 +14,28 @@
     console.log(json);
     oauthToken = json.oauth_token;
     oauthTokenSecret = json.oauth_token_secret;
-    const authUrl = `${etradeAuthUrl}/e/t/etws/authorize?key=${encodeURIComponent(etradeApiKey)}&token=${encodeURIComponent(oauthToken)}`;
+    const authUrl = `${etradeAuthUrl}/e/t/etws/authorize?key=${encodeURIComponent(
+      etradeApiKey
+    )}&token=${encodeURIComponent(oauthToken)}`;
     window.open(authUrl, '_blank');
   }
 
   async function getAccessTokenClicked(event) {
-    const json: ETradeAccessToken = await eTradeClient.getAccessToken(oauthToken, oauthTokenSecret, verifyCode);
+    const json: ETradeAccessToken = await eTradeClient.getAccessToken(
+      oauthToken,
+      oauthTokenSecret,
+      verifyCode
+    );
     console.log(json);
   }
 
   async function refreshToken() {
     try {
-      await fetch(`${API_URL}/etrade/refresh-token.endpoint`, {
-        method: 'GET',
-      });
+      const response = await eTradeClient.refreshToken();
       notifier.success('Token refreshed');
     } catch (err) {
       console.error(err);
-      notifier.success('Failed to refresh token');
+      notifier.danger('Failed to refresh token');
     }
   }
 
@@ -41,8 +45,13 @@
     });
   }
 
-  function getAccounts() {
-    eTradeClient.getAccounts();
+  async function getAccounts() {
+    try {
+      const response = await eTradeClient.getAccounts();
+    } catch (err) {
+      console.error(err);
+      notifier.danger('Failed to get list of accounts');
+    }
   }
 </script>
 
@@ -77,8 +86,15 @@
   <div slot="fallback">
     <button class="btn btn-primary my-2" type="button" on:click="{loginClicked}">Login to ETrade</button>
     <div>
-      <input class="form-control input-lg" type="text" placeholder="Verify Code" aria-label="Verify Code" bind:value="{verifyCode}" />
-      <button class="btn btn-outline my-2" type="button" on:click="{getAccessTokenClicked}">Get Access Token</button>
+      <input
+        class="form-control input-lg"
+        type="text"
+        placeholder="Verify Code"
+        aria-label="Verify Code"
+        bind:value="{verifyCode}"
+      />
+      <button class="btn btn-outline my-2" type="button" on:click="{getAccessTokenClicked}">Get
+        Access Token</button>
     </div>
   </div>
 </Doc>

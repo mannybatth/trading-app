@@ -1,8 +1,3 @@
-/*
-ALERT from: 0283 { action: 'BTO', symbol: 'RKT', price: 20.05, risky: false }
-ALERT from: 1740 { action: 'STC', symbol: 'SPAQ', price: 12.28, risky: false }
-*/
-
 import send from '@polka/send-type';
 import { alpaca } from '../../libs/alpaca';
 import { colors } from '../../models/colors';

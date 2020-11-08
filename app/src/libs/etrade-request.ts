@@ -13,7 +13,11 @@ const searchParams = (params: any, separator: string) => {
     .join(separator);
 };
 
-export const sendRequest = async (url: string, request: RequestInit, options: ETradeRequestOptions) => {
+export const sendRequest = async (
+  url: string,
+  request: RequestInit,
+  options: ETradeRequestOptions
+) => {
   const ts = new Date();
   const qs: any = {
     oauth_nonce: generateNonceFor(ts),
@@ -31,16 +35,30 @@ export const sendRequest = async (url: string, request: RequestInit, options: ET
     qs.oauth_verifier = options.verifyCode;
   }
   if (options.oauthTokenSecret) {
-    qs.oauth_signature = oauth_sign.hmacsign(request.method, url, qs, etradeApiSecret, options.oauthTokenSecret);
+    qs.oauth_signature = oauth_sign.hmacsign(
+      request.method,
+      url,
+      qs,
+      etradeApiSecret,
+      options.oauthTokenSecret
+    );
   } else {
     qs.oauth_signature = oauth_sign.hmacsign(request.method, url, qs, etradeApiSecret);
   }
+  console.log('url', url);
+  console.log('qs', qs);
   request.headers = request.headers || {};
   request.headers['Authorization'] = `OAuth realm="",${searchParams(qs, ',')}`;
   if (options.useJSON) {
     request.headers['Accept'] = 'application/json';
   }
   const response = await fetch(url, request);
+  if (response.status !== 200) {
+    console.log(response);
+    throw response;
+  }
+  console.log(response.headers);
+
   let json: any;
   if (options.useJSON) {
     json = await response.json();

@@ -89,7 +89,7 @@ export const parseStockAlert = (alertText: string): Alert | null => {
 
   const resultOne = text
     ?.match(
-      /(BTO|STC|STO|BTC)\s+([A-Z]+)(?:\s+)?\@?(?:\s+)?(\d+(?:\.\d+)?|\.\d+)/i
+      /(BTO|STC|STO|BTC)\s+([A-Z]+)(?:.*(?=@))?\@?(?:\s+)?(\d+(?:\.\d+)?|\.\d+)/i
     )
     ?.filter((x) => x);
 

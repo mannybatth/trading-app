@@ -27,12 +27,22 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage<any>) => {
       return;
     }
 
-    fetch(`${API_URL}/alert.endpoint`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(alertMessage.data),
-    });
+    if (alertMessage.data?.alert?.option) {
+      fetch(`${API_URL}/alert/option.endpoint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(alertMessage.data),
+      });
+    } else {
+      fetch(`${API_URL}/alert.endpoint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(alertMessage.data),
+      });
+    }
   }
 });
