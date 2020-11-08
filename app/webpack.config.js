@@ -81,7 +81,7 @@ module.exports = {
         canPrint: true,
       }),
     ].filter(Boolean),
-    devtool: dev && 'inline-source-map',
+    devtool: dev && 'source-map',
   },
 
   server: {

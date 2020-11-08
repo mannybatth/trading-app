@@ -14,6 +14,11 @@ export interface Alert {
   symbol: string;
   price?: number | null;
   risky: boolean;
+  option?: {
+    date: string;
+    type: string; // call/put
+    strike: number;
+  };
 }
 
 export interface RuntimeMessage<T> {
