@@ -22,9 +22,7 @@ export async function post(req, res, next) {
 
     // 2hr - 100 secs
     if (diff > 7100) {
-      const response = await doRefreshToken(tokenData.oauth_token, tokenData.oauth_token_secret);
-      req.body.options.oauthToken = response.oauth_token;
-      req.body.options.oauthTokenSecret = response.oauth_token_secret;
+      await doRefreshToken(tokenData.oauth_token, tokenData.oauth_token_secret);
     }
   }
 

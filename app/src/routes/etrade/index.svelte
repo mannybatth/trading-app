@@ -1,13 +1,19 @@
 <script lang="ts">
   import { Doc } from 'sveltefire';
   import { API_URL, etradeApiKey, etradeAuthUrl } from '../../constants';
-  import type { ETradeAccessToken, ETradeOAuthToken } from '../../models/etrade-models';
+  import type {
+    ETradeAccessToken,
+    ETradeAccount,
+    ETradeOAuthToken,
+  } from '../../models/etrade-models';
   import { notifier } from '../notifier';
   import { eTradeClient } from './etrade-client';
 
   let verifyCode: string;
   let oauthToken: string;
   let oauthTokenSecret: string;
+  let accounts: ETradeAccount[];
+  let selectedAccountIdKey: string;
 
   async function loginClicked(event) {
     const json: ETradeOAuthToken = await eTradeClient.getOAuthToken();
@@ -43,14 +49,25 @@
     fetch(`${API_URL}/etrade/logout.endpoint`, {
       method: 'GET',
     });
+    accounts = null;
   }
 
   async function getAccounts() {
     try {
-      const response = await eTradeClient.getAccounts();
+      accounts = await eTradeClient.getAccounts();
     } catch (err) {
       console.error(err);
       notifier.danger('Failed to get list of accounts');
+    }
+  }
+
+  async function getAccountPortfolio(accountIdKey: string) {
+    try {
+      const response = await eTradeClient.getAccountPortfolio(accountIdKey);
+      console.log('portfolio', response);
+    } catch (err) {
+      console.error(err);
+      notifier.danger('Failed to get account portfolio');
     }
   }
 </script>
@@ -78,6 +95,21 @@
   </details>
 
   <button class="btn btn-primary my-2 mr-2" type="button" on:click="{getAccounts}">Get Accounts</button>
+
+  {#if accounts}
+    <!-- svelte-ignore a11y-no-onchange -->
+    <select
+      class="form-select"
+      aria-label="Accounts"
+      bind:value="{selectedAccountIdKey}"
+      on:change="{() => getAccountPortfolio(selectedAccountIdKey)}"
+    >
+      <option value="0">- Select an Account -</option>
+      {#each accounts as account}
+        <option value="{account.accountIdKey}">{account.accountId} - {account.accountDesc}</option>
+      {/each}
+    </select>
+  {/if}
 
   <!-- Only shown when loading -->
   <div slot="loading">⌛</div>

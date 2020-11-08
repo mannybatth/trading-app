@@ -45,19 +45,16 @@ export const sendRequest = async (
   } else {
     qs.oauth_signature = oauth_sign.hmacsign(request.method, url, qs, etradeApiSecret);
   }
-  console.log('url', url);
-  console.log('qs', qs);
   request.headers = request.headers || {};
   request.headers['Authorization'] = `OAuth realm="",${searchParams(qs, ',')}`;
   if (options.useJSON) {
     request.headers['Accept'] = 'application/json';
   }
   const response = await fetch(url, request);
-  if (response.status !== 200) {
+  if (!response.ok) {
     console.log(response);
     throw response;
   }
-  console.log(response.headers);
 
   let json: any;
   if (options.useJSON) {
