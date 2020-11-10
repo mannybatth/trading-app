@@ -284,6 +284,48 @@ const tests: AlertTest[] = [
     },
   },
   {
+    test: 'BTO AAPL 115p. 11/13 @ 1.06 added. new avg 1.42',
+    expected: {
+      action: 'BTO',
+      symbol: 'AAPL',
+      price: 1.06,
+      risky: false,
+      option: {
+        date: '11/13',
+        type: 'put',
+        strike: 115,
+      },
+    },
+  },
+  {
+    test: 'BTO 11/13 115p; AAPL @ 1.06 added. new avg 1.42',
+    expected: {
+      action: 'BTO',
+      symbol: 'AAPL',
+      price: 1.06,
+      risky: false,
+      option: {
+        date: '11/13',
+        type: 'put',
+        strike: 115,
+      },
+    },
+  },
+  {
+    test: 'BTO 11/13 115p.,; AAPL @ 1.06 added. new avg 1.42',
+    expected: {
+      action: 'BTO',
+      symbol: 'AAPL',
+      price: 1.06,
+      risky: false,
+      option: {
+        date: '11/13',
+        type: 'put',
+        strike: 115,
+      },
+    },
+  },
+  {
     test: 'PLTR calls up 4.50 from 1.75!',
     expected: null,
   },
