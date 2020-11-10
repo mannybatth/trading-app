@@ -10,6 +10,7 @@ export const extendedHours = [
   ['09:00', '09:30'],
   ['16:00', '18:00'],
 ];
+export const marketOpenHours = ['09:30', '16:00'];
 
 export const finnhubSpreadPercent = 0.015;
 export const finnhubApiUrl = 'https://finnhub.io/api';

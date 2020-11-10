@@ -1,6 +1,12 @@
 import type Alpaca from '@alpacahq/alpaca-trade-api';
 import fetch from 'node-fetch';
-import { ameritradeApiUrl, ameritradeClientId, finnhubApiKey, finnhubApiUrl, finnhubSpreadPercent } from '../constants';
+import {
+  ameritradeApiUrl,
+  ameritradeClientId,
+  finnhubApiKey,
+  finnhubApiUrl,
+  finnhubSpreadPercent,
+} from '../constants';
 import { db } from '../firebase-admin';
 import type { Quote } from '../models/alpaca-models';
 import { colors } from '../models/colors';
@@ -29,7 +35,7 @@ export const isValidPrice = async (
       if (price > quote.ask) {
         return quote.ask * 1.05 >= price;
       } else if (price < quote.bid) {
-        return quote.bid * 0.985 <= price;
+        return quote.bid * 0.95 <= price;
       }
       return true;
     };
@@ -50,10 +56,19 @@ export const isValidPrice = async (
   }
 };
 
-export const getQuote = async (symbol: string, client: Alpaca): Promise<{ bid: number; ask: number; mark?: number }> => {
+export const getQuote = async (
+  symbol: string,
+  client: Alpaca
+): Promise<{ bid: number; ask: number; mark?: number }> => {
   let quote: { bid: number; ask: number };
   if (quoteOption === 'td') {
-    quote = await getTdQuote(symbol);
+    try {
+      quote = await getTdQuote(symbol);
+    } catch (err) {
+      // fallback
+      console.log(colors.fg.Yellow, 'falling back to alpaca quote');
+      quote = await getAlpacaQuote(symbol, client);
+    }
   } else if (quoteOption === 'finnhub') {
     quote = await getFinnhubQuote(symbol);
   } else {
@@ -80,7 +95,10 @@ export const getFinnhubQuote = async (symbol: string): Promise<{ bid: number; as
   };
 };
 
-export const getAlpacaQuote = async (symbol: string, client: Alpaca): Promise<{ bid: number; ask: number }> => {
+export const getAlpacaQuote = async (
+  symbol: string,
+  client: Alpaca
+): Promise<{ bid: number; ask: number }> => {
   const quote: Quote = await client.lastQuote(symbol);
   console.log('alpacaQuote', quote);
 
@@ -92,7 +110,9 @@ export const getAlpacaQuote = async (symbol: string, client: Alpaca): Promise<{ 
   };
 };
 
-export const getTdQuote = async (symbol: string): Promise<{ bid: number; ask: number; mark?: number }> => {
+export const getTdQuote = async (
+  symbol: string
+): Promise<{ bid: number; ask: number; mark?: number }> => {
   const tokenDataDoc = await db.doc('app-config/tokens').get();
   const tokenData = tokenDataDoc.data();
   const secondsNow = new Date().getTime() / 1000;
@@ -105,10 +125,13 @@ export const getTdQuote = async (symbol: string): Promise<{ bid: number; ask: nu
     const tokenResponse = await doRefreshToken(tokenData.refresh_token);
     accessToken = tokenResponse.access_token;
   }
-  const response = await fetch(`${ameritradeApiUrl}/v1/marketdata/${symbol}/quotes?apikey=${ameritradeClientId}`, {
-    method: 'GET',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
-  });
+  const response = await fetch(
+    `${ameritradeApiUrl}/v1/marketdata/${symbol}/quotes?apikey=${ameritradeClientId}`,
+    {
+      method: 'GET',
+      headers: { Accept: 'application/json', Authorization: `Bearer ${accessToken}` },
+    }
+  );
   const json = await response.json();
   const quote = {
     symbol: json[symbol]?.symbol,

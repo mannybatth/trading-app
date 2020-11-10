@@ -3,12 +3,13 @@ import {
   alpacaApiKey,
   alpacaApiSecret,
   extendedHours,
+  marketOpenHours,
   maxPositionSize,
   profitPercent,
   stopLossPercent,
 } from '../constants';
 import { db, firebaseAdmin } from '../firebase-admin';
-import type { Clock, Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-models';
+import type { Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-models';
 import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
 import { getQuote, isValidPrice } from './quote';
@@ -131,8 +132,11 @@ export class AlpacaClient {
     //   return;
     // }
 
-    const clock: Clock = await this.client.getClock();
-    if (!clock.is_open) {
+    const time = new Date();
+    const timeStr = `${time.getHours()}:${time.getMinutes()}`;
+    const isMarketOpen = isInRange(timeStr, marketOpenHours);
+
+    if (!isMarketOpen) {
       console.log(colors.fg.Yellow, 'Market is not open');
       return;
     }
@@ -156,7 +160,7 @@ export class AlpacaClient {
       return;
     }
 
-    const timeNow = new Date().getTime();
+    const timeNow = time.getTime();
     if (alertDoc.exists) {
       const created: number = alertDoc.data().created.seconds;
       const secondsNow = timeNow / 1000;
@@ -233,18 +237,15 @@ export class AlpacaClient {
     let entryPosition: FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>,
       entryPositionSnapshot: FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
       stockPosition: StockPosition,
-      quote: { bid: number; ask: number },
       orders: Order[];
     try {
       [
         { doc: entryPosition, snapshot: entryPositionSnapshot },
         stockPosition,
-        quote,
         orders,
       ] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
         this.findStockPosition(alert.symbol),
-        getQuote(alert.symbol, this.client),
         this.client.getOrders(),
       ]);
     } catch (err) {
@@ -256,42 +257,74 @@ export class AlpacaClient {
     if (!stockPosition) {
       console.log('Did not find stock position, cancelling any open orders', alert, discriminator);
       this.cancelOrders(orders, alert.symbol, discriminator);
+      this.removeFromQueue(alert, discriminator);
       entryPositionSnapshot.docs.forEach((doc) => doc.ref.delete());
       return;
+    }
+
+    const time = new Date();
+    const timeStr = `${time.getHours()}:${time.getMinutes()}`;
+    const isExtendedHours =
+      isInRange(timeStr, extendedHours[0]) || isInRange(timeStr, extendedHours[1]);
+    const isMarketOpen = isInRange(timeStr, marketOpenHours);
+    console.log('isExtendedHours', isExtendedHours);
+    console.log('isMarketOpen', isMarketOpen);
+
+    const stockPositionQty = parseFloat(stockPosition.qty);
+    const qty = entryPosition
+      ? Math.min(stockPositionQty, entryPosition.data().quantity)
+      : stockPositionQty;
+
+    let quote: { bid: number; ask: number };
+    try {
+      quote = await getQuote(alert.symbol, this.client);
+    } catch (err) {
+      const error = err?.error?.message || err?.message || err;
+      console.log(colors.fg.Red, 'ERROR getting quote for symbol:', alert.symbol, error);
+
+      if (!isMarketOpen) {
+        // queue up this sell order
+        this.addToQueue(alert, discriminator, qty);
+        return;
+      }
     }
 
     console.log('entryPosition', entryPosition?.data());
     console.log('stockPosition', stockPosition);
     console.log('quote', quote);
 
-    if (!entryPosition) {
-      console.log('Could not find entry position in db', alert, discriminator);
+    if (!entryPosition?.exists) {
+      console.log(
+        'Could not find entry position in db, still selling position',
+        alert,
+        discriminator
+      );
     }
 
-    const clock: Clock = await this.client.getClock();
-    const time = new Date(clock.timestamp);
-    const timeStr = `${time.getHours()}:${time.getMinutes()}`;
-
-    const stockPositionQty = parseFloat(stockPosition.qty);
-    const qty = entryPosition
-      ? Math.min(stockPositionQty, entryPosition.data().quantity)
-      : stockPositionQty;
     const isFullPosition = qty === stockPositionQty;
-    const isExtendedHours =
-      isInRange(timeStr, extendedHours[0]) || isInRange(timeStr, extendedHours[1]);
-    console.log('isExtendedHours', isExtendedHours);
 
-    if (!clock.is_open && !isExtendedHours) {
+    if (!isMarketOpen && !isExtendedHours) {
       // queue up this sell order
       this.addToQueue(alert, discriminator, qty);
       return;
     }
 
     // Cancel existing orders
-    await this.cancelOrders(orders, alert.symbol, discriminator, !isFullPosition && qty);
+    try {
+      await Promise.all([
+        this.cancelOrders(orders, alert.symbol, discriminator, !isFullPosition && qty),
+        this.removeFromQueue(alert, discriminator),
+      ]);
+    } catch (err) {
+      const error = err?.error?.message || err?.message || err;
+      console.log(colors.fg.Red, 'ERROR cancelling orders', error);
+      // queue up this sell order
+      this.addToQueue(alert, discriminator, qty);
+      return;
+    }
 
     const executeSellOrder = async () => {
-      if (clock.is_open) {
+      if (isMarketOpen) {
         await this.client.createOrder({
           symbol: alert.symbol,
           qty: qty,

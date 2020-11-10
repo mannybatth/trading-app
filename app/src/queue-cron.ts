@@ -6,10 +6,11 @@ import type { Alert } from './models/models';
 
 var rule = new schedule.RecurrenceRule();
 rule.dayOfWeek = new schedule.Range(1, 5);
-// rule.hour = 2;
-// rule.minute = 24;
+// rule.hour = 19;
+// rule.minute = 46;
 rule.hour = new schedule.Range(9, 15);
 rule.minute = [0, 30];
+rule.second = 2;
 
 schedule.scheduleJob(rule, async () => {
   console.log(colors.fg.Green, 'CHECKING QUEUE', new Date().toLocaleTimeString());
@@ -24,6 +25,7 @@ schedule.scheduleJob(rule, async () => {
     };
     const discriminator: string = data.discriminator;
     try {
+      console.log(colors.fg.Magenta, 'Sending order from queue:', discriminator, alert);
       await alpaca.sendOrder(alert, discriminator);
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
