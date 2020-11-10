@@ -13,6 +13,7 @@ import type { Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-
 import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
 import { getQuote, isValidPrice } from './quote';
+import { isInRange } from './utils';
 
 const round = (value: number, decimals: number) => {
   return Number(Math.round((value + 'e' + decimals) as any) + 'e-' + decimals);
@@ -31,10 +32,6 @@ const calcQuantity = (price: number) => {
   }
 
   return Math.floor(maxPositionSize / price);
-};
-
-const isInRange = (value: string, range: string[]) => {
-  return value >= range[0] && value <= range[1];
 };
 
 export class AlpacaClient {
@@ -132,9 +129,8 @@ export class AlpacaClient {
     //   return;
     // }
 
-    const time = new Date();
-    const timeStr = `${time.getHours()}:${time.getMinutes()}`;
-    const isMarketOpen = isInRange(timeStr, marketOpenHours);
+    const date = new Date();
+    const isMarketOpen = isInRange(date, marketOpenHours);
 
     if (!isMarketOpen) {
       console.log(colors.fg.Yellow, 'Market is not open');
@@ -160,7 +156,7 @@ export class AlpacaClient {
       return;
     }
 
-    const timeNow = time.getTime();
+    const timeNow = date.getTime();
     if (alertDoc.exists) {
       const created: number = alertDoc.data().created.seconds;
       const secondsNow = timeNow / 1000;
@@ -262,11 +258,9 @@ export class AlpacaClient {
       return;
     }
 
-    const time = new Date();
-    const timeStr = `${time.getHours()}:${time.getMinutes()}`;
-    const isExtendedHours =
-      isInRange(timeStr, extendedHours[0]) || isInRange(timeStr, extendedHours[1]);
-    const isMarketOpen = isInRange(timeStr, marketOpenHours);
+    const date = new Date();
+    const isExtendedHours = isInRange(date, extendedHours[0]) || isInRange(date, extendedHours[1]);
+    const isMarketOpen = isInRange(date, marketOpenHours);
     console.log('isExtendedHours', isExtendedHours);
     console.log('isMarketOpen', isMarketOpen);
 
