@@ -3,8 +3,8 @@ export const maxPositionSize = 500;
 export const profitPercent = 0.15;
 export const stopLossPercent = 0.1;
 
-export const alpacaApiKey = 'PKQIKF62RZ1FIUULIAEE';
-export const alpacaApiSecret = 'I36Q4tnZ6WkMh2IavPJKUOLUNzZgboy1okdKLmAO';
+export const alpacaApiKey = 'PK7DG9756M5934QAJDAP';
+export const alpacaApiSecret = 'nBFhiF7mdj7poPkFA88DcCWoOfmkUpQjvVWxhC0w';
 
 export const extendedHours = [
   ['09:00', '09:30'],
