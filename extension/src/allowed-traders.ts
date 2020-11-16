@@ -44,4 +44,37 @@ export default [
   '3426', // pjmorin20 | TAC
   '3814', // metaprox
   '3509', // rbpravin
+  '2628', // Tony_Evo
+  '9710', // JTW
+  '2989', // yuhyuhswagboy
+  '2796', // Preston
+  '5874', // finishing7ouch
+  '4802', // breadboi
+  '2753', // BigMoves9824
+  '0597', // Geekynerd
+  '9847', // Faust
+  '0591', // Effrum
+  '6252', // DDWizard
+  '3713', // Brett
+  '8565', // Accord
+  '4091', // Abnecide
+  '0747', // A-A-Ron
+  '7498', // gerardo
+  '4898', // jay313
+  '1234', // Jimby
+  '7626', // jtloo
+  '0101', // Justwats
+  '6211', // Kreegs
+  '8135', // ljs (Pajama Trader)
+  '8457', // MAK
+  '7334', // Mewz1k
+  '7364', // neo16
+  '4302', // Neosprings
+  '9890', // pdizzle721
+  '2314', // redairforce (SPX)
+  '0643', // sAfuRos
+  '2125', // shmock
+  '0896', // Smelly_Dog
+  '7725', // Spazio
+  '8982', // ZackMac
 ];

@@ -1,74 +1,79 @@
+import { marketOpenHours } from '../constants';
 import { isInRange } from './utils';
+
+function todayDateStr() {
+  return new Date().toLocaleDateString('en-US');
+}
 
 type RangeTest = { test: { date: Date; range: string[] }; expected: boolean };
 const tests: RangeTest[] = [
   {
     test: {
-      date: new Date('11/10/2020, 8:08:00 AM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 8:08:00 AM`),
+      range: marketOpenHours,
     },
     expected: false,
   },
   {
     test: {
-      date: new Date('11/10/2020, 9:00:00 AM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 9:00:00 AM`),
+      range: marketOpenHours,
     },
     expected: false,
   },
   {
     test: {
-      date: new Date('11/10/2020, 9:30:00 AM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 9:30:00 AM`),
+      range: marketOpenHours,
     },
     expected: true,
   },
   {
     test: {
-      date: new Date('11/10/2020, 9:30:01 AM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 9:30:01 AM`),
+      range: marketOpenHours,
     },
     expected: true,
   },
   {
     test: {
-      date: new Date('11/10/2020, 10:00:00 AM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 10:00:00 AM`),
+      range: marketOpenHours,
     },
     expected: true,
   },
   {
     test: {
-      date: new Date('11/10/2020, 1:00:00 PM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 1:00:00 PM`),
+      range: marketOpenHours,
     },
     expected: true,
   },
   {
     test: {
-      date: new Date('11/10/2020, 3:59:00 PM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 3:59:00 PM`),
+      range: marketOpenHours,
     },
     expected: true,
   },
   {
     test: {
-      date: new Date('11/10/2020, 3:59:59 PM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 3:59:59 PM`),
+      range: marketOpenHours,
     },
     expected: true,
   },
   {
     test: {
-      date: new Date('11/10/2020, 4:00:00 PM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 4:00:00 PM`),
+      range: marketOpenHours,
     },
     expected: false,
   },
   {
     test: {
-      date: new Date('11/10/2020, 5:00:00 PM'),
-      range: ['9:30', '16:00'],
+      date: new Date(`${todayDateStr()}, 5:00:00 PM`),
+      range: marketOpenHours,
     },
     expected: false,
   },

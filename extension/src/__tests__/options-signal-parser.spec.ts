@@ -352,6 +352,20 @@ const tests: AlertTest[] = [
       },
     },
   },
+  {
+    test: 'BTO LEVI 11/20c 18c @.2 avg .15',
+    expected: {
+      action: 'BTO',
+      symbol: 'LEVI',
+      price: 0.2,
+      risky: false,
+      option: {
+        date: '11/20',
+        type: 'call',
+        strike: 18,
+      },
+    },
+  },
 ];
 
 tests.map((alertTest) => {
