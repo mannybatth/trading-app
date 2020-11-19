@@ -5,7 +5,7 @@
   <title>Trading App</title>
 </svelte:head>
 
-<h2>Trading App</h2>
+<h2>Alpaca Account</h2>
 
 <style>
 </style>

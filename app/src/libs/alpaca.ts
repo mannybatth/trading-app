@@ -13,11 +13,7 @@ import type { Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-
 import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
 import { getQuote, isValidPrice } from './quote';
-import { isInRange } from './utils';
-
-const round = (value: number, decimals: number) => {
-  return Number(Math.round((value + 'e' + decimals) as any) + 'e-' + decimals);
-};
+import { isInRange, round } from './utils';
 
 const calcProfitLoss = (price: number) => {
   return {

@@ -77,4 +77,7 @@ export default [
   '0896', // Smelly_Dog
   '7725', // Spazio
   '8982', // ZackMac
+  '5390', // Pyro
+  '6222', // chimerako
+  '0408', // AJ5258
 ];

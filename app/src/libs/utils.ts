@@ -25,3 +25,7 @@ export const isInRange = (date: Date, range: string[]) => {
 
   return date >= rangeDateMin && date < rangeDateMax;
 };
+
+export const round = (value: number, decimals: number = 2) => {
+  return Number(Math.round((value + 'e' + decimals) as any) + 'e-' + decimals);
+};

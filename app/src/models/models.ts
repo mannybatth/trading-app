@@ -5,10 +5,12 @@ export interface Alert {
   risky?: boolean;
 }
 
-export interface EntryPositionDoc extends FirebaseFirestore.DocumentData {
+export interface EntryPosition {
   symbol: string;
   quantity: number;
   price: number;
   discriminator: string;
   created: Date;
 }
+
+export interface EntryPositionDoc extends FirebaseFirestore.DocumentData, EntryPosition {}

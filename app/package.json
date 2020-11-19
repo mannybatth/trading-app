@@ -26,6 +26,7 @@
     "polka": "next",
     "querystring": "^0.2.0",
     "request": "^2.88.2",
+    "rxjs": "^6.6.3",
     "sirv": "^1.0.0"
   },
   "devDependencies": {
