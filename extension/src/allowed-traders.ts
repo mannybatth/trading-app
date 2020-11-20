@@ -80,4 +80,6 @@ export default [
   '5390', // Pyro
   '6222', // chimerako
   '0408', // AJ5258
+  '4577', // Teppo
+  '7611', // Mattinfinity
 ];
