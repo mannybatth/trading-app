@@ -1,5 +1,6 @@
 export const API_URL = 'https://localhost:3000';
 export const maxPositionSize = 500;
+export const expertMaxPositionSize = 1000;
 export const profitPercent = 0.15;
 export const stopLossPercent = 0.1;
 
@@ -26,3 +27,10 @@ export const etradeApiSecret = '3be30244a3d835dcc8bcdea52da6dc2fe0ae354ccd26eaed
 export const etradeApiUrl = 'https://api.etrade.com';
 export const etradeAuthUrl = 'https://us.etrade.com';
 export const etradeSandboxUrl = 'https://apisb.etrade.com';
+
+export const expertTraders = [
+  '0083', // Kevin (Momentum)
+  '0001', // ScaredShirtless
+  '2237', // FunTrade
+  '9089', // Xtrades Option Guru
+];

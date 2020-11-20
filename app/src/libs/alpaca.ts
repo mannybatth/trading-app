@@ -2,6 +2,8 @@ import Alpaca from '@alpacahq/alpaca-trade-api';
 import {
   alpacaApiKey,
   alpacaApiSecret,
+  expertMaxPositionSize,
+  expertTraders,
   extendedHours,
   marketOpenHours,
   maxPositionSize,
@@ -27,12 +29,13 @@ const calcProfitLoss = (price: number) => {
   };
 };
 
-const calcQuantity = (price: number) => {
-  if (price >= maxPositionSize) {
+const calcQuantity = (price: number, discriminator: string) => {
+  const max = expertTraders.includes(discriminator) ? expertMaxPositionSize : maxPositionSize;
+  if (price >= max) {
     return 1;
   }
 
-  return Math.floor(maxPositionSize / price);
+  return Math.floor(max / price);
 };
 
 export class AlpacaClient {
@@ -182,7 +185,7 @@ export class AlpacaClient {
     }
 
     const calc = calcProfitLoss(alert.price);
-    const quantity = calcQuantity(alert.price);
+    const quantity = calcQuantity(alert.price, discriminator);
 
     let limitPrice = validInfo.mark || alert.price;
 
