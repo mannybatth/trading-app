@@ -3,15 +3,15 @@
   import { delay, mergeMap, repeat } from 'rxjs/operators';
   import { onDestroy, onMount } from 'svelte';
   import { API_URL } from '../constants';
-  import { round } from '../libs/utils';
+  import { roundToFraction } from '../libs/utils';
 
   let account;
-  $: profitLoss = round(account?.equity - account?.last_equity);
-  $: profitLossPercent = round((account?.equity - account?.last_equity) / account?.equity);
+  $: profitLoss = parseFloat(account?.equity) - parseFloat(account?.last_equity);
+  $: profitLossPercent = (profitLoss / parseFloat(account?.last_equity)) * 100;
 
   const poll = of({}).pipe(
     mergeMap((_) => fetchAccount()),
-    delay(10000),
+    delay(30000),
     repeat()
   );
   let pollSubscription: Subscription;
@@ -37,11 +37,11 @@
 
 <div class="container px-4 py-2">
   {#if account}
-    <h1 class="text-shadow-light">${round(Number(account.equity)).toLocaleString()}</h1>
-    <div class="{profitLoss >= 0 ? 'profit' : 'loss'}">
+    <h1 class="text-shadow-light">${roundToFraction(account.equity, false)}</h1>
+    <div class="{profitLoss >= 0 ? 'text-green' : 'text-red'}">
       {profitLoss >= 0 ? '▲' : '▼'}
-      ${Math.abs(profitLoss)}
-      ({profitLossPercent}%)
+      ${roundToFraction(profitLoss)}
+      ({roundToFraction(profitLossPercent, false)}%)
     </div>
   {/if}
 </div>
@@ -50,12 +50,5 @@
   .container {
     border: 1px solid #dcdcdc;
     border-radius: 8px;
-  }
-  .profit {
-    color: green;
-  }
-
-  .loss {
-    color: red;
   }
 </style>

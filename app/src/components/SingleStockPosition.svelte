@@ -1,23 +1,24 @@
 <script lang="ts">
   import { API_URL } from '../constants';
-  import { round } from '../libs/utils';
+  import { roundStrToFraction, roundToFraction } from '../libs/utils';
   import type { StockPosition } from '../models/alpaca-models';
   import type { EntryPosition } from '../models/models';
+  import SingleEntryPosition from './SingleEntryPosition.svelte';
 
   export let stockPosition: StockPosition;
 
   let detailsOpen = false;
   let badgeColorClass = 'bg-dark-gray';
-  let profitLossStr: string = '';
   let entryPositions: EntryPosition[];
   let queueItems: any[];
 
-  $: {
-    profitLossStr = round(Math.abs(Number(stockPosition.unrealized_pl))).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+  $: stockPriceChangePerc = roundToFraction(
+    ((parseFloat(stockPosition.current_price) - parseFloat(stockPosition.lastday_price)) /
+      parseFloat(stockPosition.lastday_price)) *
+      100
+  );
 
+  $: {
     badgeColorClass = (() => {
       const pl = Number(stockPosition.unrealized_pl);
       if (pl > 50) {
@@ -43,7 +44,7 @@
 
   async function getEntryPositions() {
     const response = await fetch(
-      `${API_URL}/stocks/entry-positions.endpoint?symbol=${stockPosition.symbol}`,
+      `${API_URL}/stocks/entry-positions.endpoint?symbol=${stockPosition.symbol}&queue=1`,
       {
         method: 'GET',
       }
@@ -56,103 +57,88 @@
     queueItems = queue;
   }
 
-  async function closeAlert(entry: EntryPosition) {
-    await fetch(`${API_URL}/alert.endpoint`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: 'self',
-        discriminator: entry.discriminator,
-        alert: {
-          action: 'STC',
-          symbol: entry.symbol,
-          risky: false,
-        },
-      }),
-    });
-    getEntryPositions();
-  }
-
-  async function closePosition() {
-    await fetch(`${API_URL}/alert.endpoint`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: 'self',
-        discriminator: 'self',
-        alert: {
-          action: 'STC',
-          symbol: stockPosition.symbol,
-          risky: false,
-        },
-      }),
-    });
-    getEntryPositions();
+  function isInQueue(symbol: string, discriminator: string) {
+    return !!queueItems[`STC-${discriminator}-${symbol}`];
   }
 </script>
 
-<details class="details-reset">
-  <summary class="no-outline" on:click="{onDetailToggled}">
-    <div class="col-12">
-      <div class="col-11 d-table-cell border-top v-align-middle px-2 py-1">
-        <div class="f3 text-bold">{stockPosition.symbol}</div>
-        <div class="f5">{stockPosition.qty} shares</div>
-      </div>
-      <div class="col-1 d-table-cell border-top v-align-middle px-2 py-1">
-        <div
-          class="price-badge rounded-1 text-white text-center f3-light px-3 py-1 {badgeColorClass}"
-        >
-          {Number(stockPosition.unrealized_pl) > 0 ? '+' : '-'}${profitLossStr}
-        </div>
-      </div>
+<tr class="position-row" on:click="{onDetailToggled}">
+  <td class="border-top v-align-middle px-2 py-1">
+    <div class="f3 text-bold">{stockPosition.symbol}</div>
+    <div class="f5">{stockPosition.qty} shares</div>
+  </td>
+  <td
+    class="border-top v-align-middle px-2 py-1 {Number(stockPosition.unrealized_intraday_pl) > 0 ? 'text-green' : 'text-red'}"
+  >
+    <div class="f5">
+      {Number(stockPosition.unrealized_intraday_pl) > 0 ? '+' : '-'}${roundStrToFraction(stockPosition.unrealized_intraday_pl)}
     </div>
-  </summary>
-  <div class="details">
-    {#if entryPositions}
-      {#if entryPositions.length > 0}
-        <div class="d-table width-full py-2">
-          {#each entryPositions as entry}
-            <div class="col-12 entry-row px-3">
-              <div class="col-11 d-table-cell">{entry.discriminator}</div>
-              <div class="col-1 d-table-cell">
-                <button
-                  class="btn btn-danger my-2"
-                  type="button"
-                  on:click="{() => closeAlert(entry)}"
-                >Close Alert</button>
-              </div>
-            </div>
-          {/each}
-        </div>
+    <div class="f5">
+      {Number(stockPosition.unrealized_intraday_plpc) > 0 ? '+' : '-'}{roundToFraction(parseFloat(stockPosition.unrealized_intraday_plpc) * 100)}%
+    </div>
+  </td>
+  <td class="border-top v-align-middle px-2 py-1">
+    <div class="f4">${roundStrToFraction(stockPosition.market_value)}</div>
+  </td>
+  <td class="border-top v-align-middle text-right px-2 py-1">
+    <div class="f4 {Number(stockPosition.unrealized_plpc) > 0 ? 'text-green' : 'text-red'}">
+      {Number(stockPosition.unrealized_plpc) > 0 ? '+' : '-'}{roundToFraction(parseFloat(stockPosition.unrealized_plpc) * 100)}%
+    </div>
+  </td>
+  <td class="border-top v-align-middle px-2 py-1 price-badge-cell">
+    <div class="rounded-1 text-white text-center f3-light px-3 py-1 {badgeColorClass}">
+      {Number(stockPosition.unrealized_pl) > 0 ? '+' : '-'}${roundStrToFraction(stockPosition.unrealized_pl)}
+    </div>
+  </td>
+</tr>
+
+{#if detailsOpen}
+  <tr class="details">
+    <td colspan="5">
+      <div class="py-2 px-3">
+        Current Price:
+        <span
+          class="Label Label--large Label--gray-darker mr-1"
+          title="Label: design"
+        >${stockPosition.current_price}</span>
+        <span class="{Number(stockPosition.change_today) > 0 ? 'text-green' : 'text-red'}">
+          {Number(stockPosition.change_today) > 0 ? '+' : '-'}{stockPriceChangePerc}%
+        </span>
+      </div>
+      {#if entryPositions}
+        {#if entryPositions.length > 0}
+          <table class="width-full">
+            {#each entryPositions as entry}
+              <SingleEntryPosition
+                entryPosition="{entry}"
+                inQueue="{isInQueue(entry.symbol, entry.discriminator)}"
+              />
+            {/each}
+          </table>
+        {:else}
+          <SingleEntryPosition
+            symbol="{stockPosition.symbol}"
+            inQueue="{isInQueue(stockPosition.symbol, 'self')}"
+          />
+        {/if}
       {:else}
-        <div class="d-flex flex-row flex-justify-between px-3 py-2">
-          <div>❗ No alerts found ❗</div>
-          <button class="btn btn-danger my-2" type="button" on:click="{closePosition}">
-            Close Position
-          </button>
-        </div>
+        <span class="Label bg-blue mx-3 my-2"><span>Loading</span><span
+            class="AnimatedEllipsis"
+          ></span></span>
       {/if}
-    {:else}
-      <span class="Label bg-blue mx-3 my-2"><span>Loading</span><span
-          class="AnimatedEllipsis"
-        ></span></span>
-    {/if}
-  </div>
-</details>
+    </td>
+  </tr>
+{/if}
 
 <style>
-  .no-outline {
-    outline: none;
+  .position-row {
+    cursor: pointer;
   }
   .details {
     background-color: #f8f8f8;
   }
-  .price-badge {
-    min-width: 120px;
+  .price-badge-cell {
+    width: 155px;
   }
   .bg-light-green {
     background-color: #8bc34a;
@@ -162,8 +148,5 @@
   }
   .bg-dark-gray {
     background-color: #9e9e9e;
-  }
-  .entry-row:hover {
-    background-color: #dedede;
   }
 </style>

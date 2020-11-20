@@ -16,8 +16,8 @@ export async function post(req, res, next) {
     return;
   }
 
-  await alpaca.sendOrder(alert, discriminator);
+  const result = await alpaca.sendOrder(alert, discriminator);
 
   console.log('');
-  send(res, 200, {});
+  send(res, 200, result);
 }

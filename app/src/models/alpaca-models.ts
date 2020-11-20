@@ -80,3 +80,9 @@ export interface Clock {
   next_open: Date;
   next_close: Date;
 }
+
+export interface CreateOrderResponse {
+  ok: boolean;
+  addedToQueue?: boolean;
+  reason?: string;
+}

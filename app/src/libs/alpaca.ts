@@ -9,11 +9,16 @@ import {
   stopLossPercent,
 } from '../constants';
 import { db, firebaseAdmin } from '../firebase-admin';
-import type { Order, OrderUpdateMessage, StockPosition } from '../models/alpaca-models';
+import type {
+  CreateOrderResponse,
+  Order,
+  OrderUpdateMessage,
+  StockPosition,
+} from '../models/alpaca-models';
 import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
 import { getQuote, isValidPrice } from './quote';
-import { isInRange, round } from './utils';
+import { isInRange, round, sleep } from './utils';
 
 const calcProfitLoss = (price: number) => {
   return {
@@ -104,7 +109,7 @@ export class AlpacaClient {
     socket.connect();
   }
 
-  async sendOrder(alert: Alert, discriminator: string) {
+  async sendOrder(alert: Alert, discriminator: string): Promise<CreateOrderResponse> {
     if (this.isAlertPending(alert, discriminator)) {
       console.log(colors.fg.Yellow, 'Skipping alert, pending alert already exists');
       return;
@@ -120,7 +125,7 @@ export class AlpacaClient {
     return result;
   }
 
-  async buyOrder(alert: Alert, discriminator: string) {
+  async buyOrder(alert: Alert, discriminator: string): Promise<CreateOrderResponse> {
     // if (alert.risky) {
     //   return;
     // }
@@ -130,7 +135,10 @@ export class AlpacaClient {
 
     if (!isMarketOpen) {
       console.log(colors.fg.Yellow, 'Market is not open');
-      return;
+      return {
+        ok: false,
+        reason: 'Market is not open',
+      };
     }
 
     const [validInfo, alertDoc] = await Promise.all([
@@ -149,7 +157,10 @@ export class AlpacaClient {
         'ask:',
         validInfo.ask
       );
-      return;
+      return {
+        ok: false,
+        reason: 'Price is not valid',
+      };
     }
 
     const timeNow = date.getTime();
@@ -163,7 +174,10 @@ export class AlpacaClient {
           colors.fg.Yellow,
           'Alert already exists for this symbol from user, ignoring alert'
         );
-        return;
+        return {
+          ok: false,
+          reason: 'Alert already exists for this symbol from user',
+        };
       }
     }
 
@@ -219,13 +233,22 @@ export class AlpacaClient {
         quantity,
         created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
       });
+
+      return {
+        ok: true,
+      };
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'ERROR creating order:', error);
+
+      return {
+        ok: false,
+        reason: 'error creating order',
+      };
     }
   }
 
-  async sellOrder(alert: Alert, discriminator: string) {
+  async sellOrder(alert: Alert, discriminator: string): Promise<CreateOrderResponse> {
     let entryPosition: FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>,
       entryPositionSnapshot: FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
       stockPosition: StockPosition,
@@ -243,7 +266,10 @@ export class AlpacaClient {
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'ERROR getting data for sell order', error);
-      return;
+      return {
+        ok: false,
+        reason: 'Error getting data for sell order',
+      };
     }
 
     if (!stockPosition) {
@@ -251,7 +277,10 @@ export class AlpacaClient {
       this.cancelOrders(orders, alert.symbol, discriminator);
       this.removeFromQueue(alert, discriminator);
       entryPositionSnapshot.docs.forEach((doc) => doc.ref.delete());
-      return;
+      return {
+        ok: false,
+        reason: 'Did not find stock position to sell',
+      };
     }
 
     const date = new Date();
@@ -275,7 +304,10 @@ export class AlpacaClient {
       if (!isMarketOpen) {
         // queue up this sell order
         this.addToQueue(alert, discriminator, qty);
-        return;
+        return {
+          ok: true,
+          addedToQueue: true,
+        };
       }
     }
 
@@ -296,7 +328,10 @@ export class AlpacaClient {
     if (!isMarketOpen && !isExtendedHours) {
       // queue up this sell order
       this.addToQueue(alert, discriminator, qty);
-      return;
+      return {
+        ok: true,
+        addedToQueue: true,
+      };
     }
 
     // Cancel existing orders
@@ -310,7 +345,11 @@ export class AlpacaClient {
       console.log(colors.fg.Red, 'ERROR cancelling orders', error);
       // queue up this sell order
       this.addToQueue(alert, discriminator, qty);
-      return;
+      return {
+        ok: false,
+        addedToQueue: true,
+        reason: 'Error cancelling orders',
+      };
     }
 
     const executeSellOrder = async () => {
@@ -342,27 +381,38 @@ export class AlpacaClient {
     // Create sell order
     try {
       await executeSellOrder();
+      return {
+        ok: true,
+      };
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'ERROR creating order to close position', error);
 
       if (error && error.includes('insufficient qty available for order')) {
-        setTimeout(async () => {
-          console.log('Trying sell order again now after 3s', alert, discriminator);
-          try {
-            await executeSellOrder();
-          } catch (err) {
-            const error2 = err?.error?.message || err?.message || err;
-            console.log(
-              colors.fg.Red,
-              'ERROR! creating order to close position on 2nd try',
-              error2
-            );
-            this.addToQueue(alert, discriminator, qty);
-          }
-        }, 3000);
+        await sleep(3000);
+        console.log('Trying sell order again now after 3s', alert, discriminator);
+        try {
+          await executeSellOrder();
+          return {
+            ok: true,
+          };
+        } catch (err) {
+          const error2 = err?.error?.message || err?.message || err;
+          console.log(colors.fg.Red, 'ERROR! creating order to close position on 2nd try', error2);
+          this.addToQueue(alert, discriminator, qty);
+          return {
+            ok: false,
+            addedToQueue: true,
+            reason: 'Error creating order to close position on 2nd try',
+          };
+        }
       } else {
         this.addToQueue(alert, discriminator, qty);
+        return {
+          ok: false,
+          addedToQueue: true,
+          reason: 'Error creating order to close position',
+        };
       }
     }
   }

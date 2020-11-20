@@ -10,7 +10,7 @@ export interface EntryPosition {
   quantity: number;
   price: number;
   discriminator: string;
-  created: Date;
+  created: any;
 }
 
 export interface EntryPositionDoc extends FirebaseFirestore.DocumentData, EntryPosition {}

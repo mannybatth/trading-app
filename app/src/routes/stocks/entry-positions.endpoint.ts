@@ -3,26 +3,31 @@ import { db } from '../../firebase-admin';
 
 export async function get(req, res, next) {
   try {
-    const symbol = req.query.symbol;
-    const queue = new Map();
+    const symbol: string = req.query.symbol;
+    const returnQueue: boolean = req.query.queue == true;
+    const queue = {};
 
-    const positionsSnapshot = await db.collection('positions').where('symbol', '==', symbol).get();
+    const positionsSnapshot = symbol
+      ? await db.collection('positions').where('symbol', '==', symbol).get()
+      : await db.collection('positions').get();
     const positions = positionsSnapshot.docs.map((doc) => doc.data());
 
-    await Promise.all(
-      positions.map(async (pos) => {
-        const discriminator = pos.discriminator;
-        const queueDoc = await db.doc(`queue/STC-${discriminator}-${symbol}`).get();
-        if (queueDoc.exists) {
-          queue.set(`STC-${discriminator}-${symbol}`, queueDoc.data());
-        }
-      })
-    );
+    if (returnQueue) {
+      await Promise.all(
+        positions.map(async (pos) => {
+          const discriminator = pos.discriminator;
+          const queueDoc = await db.doc(`queue/STC-${discriminator}-${symbol}`).get();
+          if (queueDoc.exists) {
+            queue[`STC-${discriminator}-${symbol}`] = queueDoc.data();
+          }
+        })
+      );
 
-    if (positions.length === 0) {
-      const queueDoc = await db.doc(`queue/STC-self-${symbol}`).get();
-      if (queueDoc.exists) {
-        queue.set(`STC-self-${symbol}`, queueDoc.data());
+      if (positions.length === 0) {
+        const queueDoc = await db.doc(`queue/STC-self-${symbol}`).get();
+        if (queueDoc.exists) {
+          queue[`STC-self-${symbol}`] = queueDoc.data();
+        }
       }
     }
 
