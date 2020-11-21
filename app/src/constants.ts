@@ -1,7 +1,7 @@
 export const API_URL = 'https://localhost:3000';
 export const maxPositionSize = 500;
 export const expertMaxPositionSize = 1000;
-export const profitPercent = 0.15;
+export const profitPercent = 0.3;
 export const stopLossPercent = 0.1;
 
 export const alpacaApiKey = 'PK443FQFNJ5U825Y4RSY';
