@@ -40,6 +40,16 @@
     const { positions } = await response.json();
     entryPositions = positions;
   }
+
+  async function cancelAlert(alertsRef: any, alertId: string, orderId: string) {
+    const response = await fetch(`${API_URL}/alpaca/order.endpoint?orderId=${orderId}`, {
+      method: 'DELETE',
+    });
+    if (response.status !== 200) {
+      throw response;
+    }
+    alertsRef.doc(alertId).delete();
+  }
 </script>
 
 <svelte:head>
@@ -68,7 +78,7 @@
                 <button
                   class="btn btn-danger btn-sm"
                   type="button"
-                  on:click="{() => alertsRef.doc(alert.id).delete()}"
+                  on:click="{() => cancelAlert(alertsRef, alert.id, alert.order_id)}"
                 >X</button>
               </td>
             </tr>

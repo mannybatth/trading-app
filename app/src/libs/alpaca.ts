@@ -212,7 +212,7 @@ export class AlpacaClient {
         calc.loss - validInfo.spread
       );
       const clientId = `${discriminator}-${alert.symbol}-${timeNow}`;
-      await this.client.createOrder({
+      const order = await this.client.createOrder({
         symbol: alert.symbol,
         qty: quantity,
         side: 'buy',
@@ -235,6 +235,7 @@ export class AlpacaClient {
         discriminator,
         quantity,
         created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+        order_id: order.id,
       });
 
       return {
