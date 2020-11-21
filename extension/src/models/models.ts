@@ -3,6 +3,7 @@ export interface ChatMessage {
   text: string;
   discriminator: string;
   alert: Alert;
+  userRoles: string[];
   element: {
     id: string;
     hasXtradeIcon: boolean;
@@ -30,4 +31,5 @@ export interface RuntimeAlertMessage {
   username: string;
   discriminator: string;
   alert: Alert;
+  userRoles: string[];
 }

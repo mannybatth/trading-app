@@ -11,6 +11,7 @@ export const sendAlertMessage = (message: ChatMessage) => {
       username: message.username,
       discriminator: message.discriminator,
       alert: message.alert,
+      userRoles: message.userRoles,
     },
   };
   chrome.runtime.sendMessage(runtimeMessage);

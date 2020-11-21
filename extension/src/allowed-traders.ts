@@ -1,4 +1,11 @@
-export default [
+export const allowedUserRoles: string[] = [
+  '70%+ Win Rate',
+  'Top Analyst',
+  'Analyst',
+  'Level 6 Trader',
+];
+
+export const allowedTraders: string[] = [
   '9908', // BYR0N
   '0283', // ranman1665
   '0376', // TerraIncognita

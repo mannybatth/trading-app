@@ -52,6 +52,11 @@ export class MessageQueue {
     const headerTagSplits = headerTag.textContent.split('#');
     const discriminator = headerTagSplits[headerTagSplits.length - 1];
 
+    const rolesListTag = userPopout.querySelector('[class*="rolesList-"]');
+    const userRoles = Array.from(
+      rolesListTag.querySelectorAll('[class*="role-"]')
+    ).map((tag) => tag.getAttribute('aria-label'));
+
     usernameSpan.click();
 
     const message: ChatMessage = {
@@ -59,6 +64,7 @@ export class MessageQueue {
       discriminator,
       text,
       alert,
+      userRoles,
       element: {
         id: node.id,
         hasXtradeIcon: containsXtradeIcon(node),
