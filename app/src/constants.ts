@@ -28,9 +28,20 @@ export const etradeApiUrl = 'https://api.etrade.com';
 export const etradeAuthUrl = 'https://us.etrade.com';
 export const etradeSandboxUrl = 'https://apisb.etrade.com';
 
+/*
+
+export const expertTraderRoles = [
+  'Level 6 Trader',
+  'Level 7 Trader',
+  'Level 8 Trader',
+  'Level 9 Trader',
+];
+
+*/
+
 export const expertTraders = [
   '0083', // Kevin (Momentum)
   '0001', // ScaredShirtless
   '2237', // FunTrade
-  '9089', // Xtrades Option Guru
+  '8905', // Xtrades Option Guru
 ];

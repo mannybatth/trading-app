@@ -6,8 +6,6 @@ import type { Alert } from './models/models';
 
 var rule = new schedule.RecurrenceRule();
 rule.dayOfWeek = new schedule.Range(1, 5);
-// rule.hour = 19;
-// rule.minute = 46;
 rule.hour = new schedule.Range(9, 15);
 rule.minute = [0, 30];
 rule.second = 1;

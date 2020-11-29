@@ -30,7 +30,12 @@ const calcProfitLoss = (price: number) => {
 };
 
 const calcQuantity = (price: number, discriminator: string) => {
-  const max = expertTraders.includes(discriminator) ? expertMaxPositionSize : maxPositionSize;
+  const max = (() => {
+    if (price < 9) {
+      return maxPositionSize;
+    }
+    return expertTraders.includes(discriminator) ? expertMaxPositionSize : maxPositionSize;
+  })();
   if (price >= max) {
     return 1;
   }
@@ -190,14 +195,14 @@ export class AlpacaClient {
     let limitPrice = validInfo.mark || alert.price;
 
     // add some cushion
-    if (alert.price > 1) {
-      limitPrice = limitPrice + 0.004;
-    } else if (alert.price > 2) {
-      limitPrice = limitPrice + 0.01;
+    if (alert.price > 10) {
+      limitPrice = limitPrice + 0.04;
     } else if (alert.price > 5) {
       limitPrice = limitPrice + 0.03;
-    } else if (alert.price > 10) {
-      limitPrice = limitPrice + 0.04;
+    } else if (alert.price > 4) {
+      limitPrice = limitPrice + 0.01;
+    } else if (alert.price > 1) {
+      limitPrice = limitPrice + 0.004;
     }
 
     try {
@@ -338,11 +343,12 @@ export class AlpacaClient {
       };
     }
 
+    await this.removeFromQueue(alert, discriminator);
+
     // Cancel existing orders
     try {
       await Promise.all([
         this.cancelOrders(orders, alert.symbol, discriminator, !isFullPosition && qty),
-        this.removeFromQueue(alert, discriminator),
       ]);
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
