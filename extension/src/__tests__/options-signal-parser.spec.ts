@@ -423,6 +423,48 @@ const tests: AlertTest[] = [
       },
     },
   },
+  {
+    test: 'BTO SE 200 12/18 200C @ 2.25',
+    expected: {
+      action: 'BTO',
+      symbol: 'SE',
+      price: 2.25,
+      risky: false,
+      option: {
+        date: '12/18',
+        type: 'call',
+        strike: 200,
+      },
+    },
+  },
+  {
+    test: 'STC SPOT 350c 4/16/21 @ 26 (partial )',
+    expected: {
+      action: 'STC',
+      symbol: 'SPOT',
+      price: 26,
+      risky: false,
+      option: {
+        date: '4/16/21',
+        type: 'call',
+        strike: 350,
+      },
+    },
+  },
+  {
+    test: 'BTO TGT 12/31 177.5 C @1.4',
+    expected: {
+      action: 'BTO',
+      symbol: 'TGT',
+      price: 1.4,
+      risky: false,
+      option: {
+        date: '12/31',
+        type: 'call',
+        strike: 177.5,
+      },
+    },
+  },
 ];
 
 tests.map((alertTest) => {

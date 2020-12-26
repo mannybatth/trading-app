@@ -3,6 +3,10 @@ export const allowedUserRoles: string[] = [
   'Top Analyst',
   'Analyst',
   'Level 6 Trader',
+  'Level 7 Trader',
+  'Level 8 Trader',
+  'Level 9 Trader',
+  'Level 10 Trader',
 ];
 
 export const allowedTraders: string[] = [

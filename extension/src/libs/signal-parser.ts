@@ -89,9 +89,11 @@ export const parseStockAlert = (alertText: string): Alert | null => {
 
   const resultOne = text
     ?.match(
-      /(BTO|STC|STO|BTC)\s+([A-Z]+)(?:.*(?=@))?\@?(?:\s+)?(\d+(?:\.\d+)?|\.\d+)/i
+      /(BTO|STC|STO|BTC)\s+([A-Z]+)(?:.*(?=@))?\@?(?:\s+)?(\d+\b(?:\.\d+\b)?|\.\d+\b)/i
     )
     ?.filter((x) => x);
+
+  // console.log('parseStockAlert resultOne', resultOne);
 
   if (!resultOne || resultOne.length < 4) {
     return parseNakedCloseAlert(text);
@@ -113,6 +115,8 @@ export const parseStockAlert = (alertText: string): Alert | null => {
 };
 
 export const parseAlert = (alertText: string): Alert | null => {
+  alertText = removeWords(alertText);
+
   const text = alertText
     ?.trim()
     ?.replace(/ +(?= )|\$/g, '') // remove double spaces and dollar signs
@@ -120,25 +124,39 @@ export const parseAlert = (alertText: string): Alert | null => {
   const risky = text.includes('RISK') || text.includes('LOTTO');
 
   const resultOne = text
-    ?.match(/(BTO|STC|STO|BTC)\s+(.+)(?:\s+)?\@(?:\s+)?(\d+(?:\.\d+)?|\.\d+)/i)
+    ?.match(
+      /(BTO|STC|STO|BTC)\s+(.+)(?:\s+)?(\@|\d*[CP])(?:\s+)?(\d+\b(?:\.\d+\b)?|\.\d+\b)/i
+    )
     ?.filter((x) => x);
 
-  if (!resultOne || resultOne.length < 4) {
+  if (!resultOne || resultOne.length < 5) {
     return parseStockAlert(alertText);
   }
   resultOne.shift();
 
+  if (resultOne[2] !== '@') {
+    resultOne[1] = `${resultOne[1]}${resultOne[2]}`;
+    resultOne[2] = '@';
+  }
   const action = resultOne[0];
-  const price = +resultOne[2];
+  const price = +resultOne[3];
 
-  const resultTwo =
-    resultOne &&
-    resultOne?.[1]
-      ?.match(
-        /([A-Z]+)\s+(\d+\/\d+(?:\/\d+)?)(?:.*)?\s+(\d+(?:\.\d+)?|\.\d+)([CP])|([A-Z]+)\s+(\d+(?:\.\d+)?|\.\d+)([CP])(?:.*)?\s+(\d+\/\d+(?:\/\d+)?)|(\d+\/\d+(?:\/\d+)?)(?:.*)?\s+([A-Z]+)\s+(\d+(?:\.\d+)?|\.\d+)([CP])|(\d+(?:\.\d+)?|\.\d+)([CP])(?:.*)?\s+(\d+\/\d+(?:\/\d+)?)(?:.*)?\s+([A-Z]+)|(\d+\/\d+(?:\/\d+)?)(?:.*)?\s+(\d+(?:\.\d+)?|\.\d+)([CP])(?:.*)?\s+([A-Z]+)/i
-      )
-      ?.filter((x) => x);
+  // console.log('resultOne', resultOne);
+  const regex = new RegExp(
+    [
+      /([A-Z]+)\s+(?:.*\s+)?(\d+\/\d+(?:\/\d+)?)(?:.*)?\s+(\d+(?:\.\d+)?|\.\d+)(?:\s+)?([CP]\b)|/,
+      /([A-Z]+)\s+(\d+(?:\.\d+)?|\.\d+)(?:\s+)?([CP]\b)(?:.*)?\s+(\d+\/\d+(?:\/\d+)?)|/,
+      /(\d+\/\d+(?:\/\d+)?)(?:.*)?\s+([A-Z]+)\s+(\d+(?:\.\d+)?|\.\d+)(?:\s+)?([CP]\b)|/,
+      /(\d+(?:\.\d+)?|\.\d+)(?:\s+)?([CP]\b)(?:.*)?\s+(\d+\/\d+(?:\/\d+)?)(?:.*)?\s+([A-Z]+)|/,
+      /(\d+\/\d+(?:\/\d+)?)(?:.*)?\s+(\d+(?:\.\d+)?|\.\d+)(?:\s+)?([CP]\b)(?:.*)?\s+([A-Z]+)/i,
+    ]
+      .map((r: RegExp) => r.source)
+      .join('')
+  );
 
+  const resultTwo = resultOne && regex.exec(resultOne?.[1])?.filter((x) => x);
+
+  // console.log('resultTwo', resultTwo);
   if (!resultTwo || resultTwo.length < 5) {
     return parseStockAlert(alertText);
   }
@@ -176,4 +194,27 @@ export const parseAlert = (alertText: string): Alert | null => {
   };
 
   return alert;
+};
+
+const removeWordsList = [
+  'remainder',
+  'full',
+  'half',
+  'all',
+  'some',
+  'partial',
+  'out',
+  'sold',
+  'stopped',
+  'loss',
+  'for',
+  'long',
+  'short',
+];
+
+const removeWords = (text: string) => {
+  const expStr = removeWordsList.join('|');
+  return text
+    .replace(new RegExp('\\b(' + expStr + ')\\b', 'gi'), ' ')
+    .replace(/\s{2,}/g, ' ');
 };

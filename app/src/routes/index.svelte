@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Collection } from 'sveltefire';
+  import SingleEntryPosition from '../components/SingleEntryPosition.svelte';
   import { API_URL } from '../constants';
   import { timeSince } from '../libs/utils';
   import type { StockPosition } from '../models/alpaca-models';
@@ -9,6 +10,8 @@
   let stockPositions: StockPosition[] = [];
   let entryPositions: EntryPosition[];
   let positionsWithoutUser: StockPosition[] = [];
+  let entriesWithoutPosition: EntryPosition[] = [];
+  let oldEntryPositions: EntryPosition[] = [];
 
   onMount(async () => {
     await Promise.all([getStockPositions(), getEntryPositions()]);
@@ -18,6 +21,21 @@
         return !entryPositions.some((entry) => entry.symbol === pos.symbol) ? pos : null;
       })
       .filter((x) => x);
+
+    entriesWithoutPosition = entryPositions
+      .map((entryPos) => {
+        return !stockPositions.some((pos) => pos.symbol === entryPos.symbol) ? entryPos : null;
+      })
+      .filter((x) => x);
+
+    const secondsNow = Date.now() / 1000;
+    oldEntryPositions = entryPositions
+      .map((entryPos) => {
+        const time = secondsNow - entryPos.created._seconds;
+        return time > 60 * 60 * 24 * 14 ? entryPos : null;
+      })
+      .filter((x) => x)
+      .sort((a, b) => (a.created._seconds > b.created._seconds ? 1 : -1));
   });
 
   async function getStockPositions() {
@@ -140,17 +158,42 @@
       </table>
     {:else}None{/if}
   </div>
+
+  <div>
+    <h2>Entries without a position</h2>
+    {#if entriesWithoutPosition.length > 0}
+      {#each entriesWithoutPosition as entry}
+        {entry.symbol}
+        <SingleEntryPosition entryPosition="{entry}" />
+      {/each}
+    {:else}None{/if}
+  </div>
+
+  <div class="old-positions">
+    <h2>Old Positions</h2>
+    {#if oldEntryPositions.length > 0}
+      {#each oldEntryPositions as entry}
+        {entry.symbol}
+        <SingleEntryPosition entryPosition="{entry}" />
+      {/each}
+    {:else}None{/if}
+  </div>
 </div>
 
 <style>
   .grid-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: max-content max-content 1fr;
     gap: 1em 1em;
     grid-template-areas:
       '. .'
-      '. .';
+      '. .'
+      'a a';
+  }
+
+  .old-positions {
+    grid-area: a;
   }
 
   td,

@@ -35,6 +35,7 @@
       throw response;
     }
     stockPositions = await response.json();
+    stockPositions = stockPositions.sort((a, b) => (+a.unrealized_pl < +b.unrealized_pl ? 1 : -1));
   }
 </script>
 

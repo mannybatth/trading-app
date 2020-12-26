@@ -317,6 +317,24 @@ const tests: AlertTest[] = [
       'BABA recovered most of the gains .... Right at resistance and we will be super bullish if it can close above @ 300 today..',
     expected: null,
   },
+  {
+    test: 'STC remainder NNOX @ 54',
+    expected: {
+      action: 'STC',
+      symbol: 'NNOX',
+      price: 54,
+      risky: false,
+    },
+  },
+  {
+    test: 'BTO GOLD @ 22.51 (swing) per @007of𝒲𝒶𝓁𝓁𝓈𝓉(𝘌𝘙 𝘚𝘈𝘎𝘌)',
+    expected: {
+      action: 'BTO',
+      symbol: 'GOLD',
+      price: 22.51,
+      risky: false,
+    },
+  },
 ];
 
 tests.map((alertTest) => {

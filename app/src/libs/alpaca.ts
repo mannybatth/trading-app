@@ -30,12 +30,8 @@ const calcProfitLoss = (price: number) => {
 };
 
 const calcQuantity = (price: number, discriminator: string) => {
-  const max = (() => {
-    if (price < 9) {
-      return maxPositionSize;
-    }
-    return expertTraders.includes(discriminator) ? expertMaxPositionSize : maxPositionSize;
-  })();
+  const isExpert = expertTraders.includes(discriminator);
+  const max = isExpert ? expertMaxPositionSize : maxPositionSize;
   if (price >= max) {
     return 1;
   }
@@ -62,7 +58,7 @@ export class AlpacaClient {
       socket.subscribe(trade_keys);
     });
     socket.onDisconnect(() => {
-      console.log('Disconnected from socket');
+      console.log(colors.fg.Red, 'Disconnected from socket');
     });
     socket.onStateChange((newState: string) => {
       console.log(`State changed to ${newState}`);
@@ -82,6 +78,12 @@ export class AlpacaClient {
           client_order_id: message.order.client_order_id,
         })}`
       );
+      // console.log(colors.fg.Cyan, `Order update: ${JSON.stringify(message, null, 2)}`);
+      // console.log(colors.fg.Cyan, 'Order update:', message);
+      // if (message.order.legs?.length > 0) {
+      //   console.log(colors.fg.Cyan, 'Order legs:', message.order.legs);
+      // }
+      console.log('');
       if (message?.event === 'fill') {
         const qty = parseFloat(message?.order?.filled_qty);
 
@@ -260,17 +262,19 @@ export class AlpacaClient {
   async sellOrder(alert: Alert, discriminator: string): Promise<CreateOrderResponse> {
     let entryPosition: FirebaseFirestore.QueryDocumentSnapshot<EntryPositionDoc>,
       entryPositionSnapshot: FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
+      fromDiscriminator: boolean,
+      singleAlert: boolean,
       stockPosition: StockPosition,
       orders: Order[];
     try {
       [
-        { doc: entryPosition, snapshot: entryPositionSnapshot },
+        { doc: entryPosition, snapshot: entryPositionSnapshot, fromDiscriminator, singleAlert },
         stockPosition,
         orders,
       ] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
         this.findStockPosition(alert.symbol),
-        this.client.getOrders(),
+        this.client.getOrders({ limit: 500 }),
       ]);
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
@@ -299,9 +303,10 @@ export class AlpacaClient {
     console.log('isMarketOpen', isMarketOpen);
 
     const stockPositionQty = parseFloat(stockPosition.qty);
-    const qty = entryPosition
-      ? Math.min(stockPositionQty, entryPosition.data().quantity)
-      : stockPositionQty;
+    const qty =
+      entryPosition && !singleAlert
+        ? Math.min(stockPositionQty, entryPosition.data().quantity)
+        : stockPositionQty;
 
     let quote: { bid: number; ask: number };
     try {
@@ -321,18 +326,36 @@ export class AlpacaClient {
     }
 
     console.log('entryPosition', entryPosition?.data());
+    console.log('fromDiscriminator', fromDiscriminator);
+    console.log('singleAlert', singleAlert);
     console.log('stockPosition', stockPosition);
     console.log('quote', quote);
 
-    if (!entryPosition?.exists) {
+    if (!fromDiscriminator) {
       console.log(
-        'Could not find entry position in db, still selling position',
+        'Could not find entry position from this discriminator, still continuing',
         alert,
         discriminator
       );
-    }
 
-    const isFullPosition = qty === stockPositionQty;
+      if (entryPosition) {
+        console.log(colors.fg.Yellow, 'A alert from another user exists, not selling');
+        return {
+          ok: false,
+          addedToQueue: false,
+          reason: 'A alert from another user exists, not selling',
+        };
+      }
+
+      if (parseFloat(stockPosition.unrealized_pl) < 0) {
+        console.log(colors.fg.Yellow, 'Position is not green, not selling');
+        return {
+          ok: false,
+          addedToQueue: false,
+          reason: 'User does not own entry and position is not green',
+        };
+      }
+    }
 
     if (!isMarketOpen && !isExtendedHours) {
       // queue up this sell order
@@ -344,6 +367,9 @@ export class AlpacaClient {
     }
 
     await this.removeFromQueue(alert, discriminator);
+
+    discriminator = (entryPosition && entryPosition.data().discriminator) || discriminator;
+    const isFullPosition = qty === stockPositionQty;
 
     // Cancel existing orders
     try {
@@ -436,6 +462,7 @@ export class AlpacaClient {
           doc: doc as ReturnType,
           snapshot: snapshot as FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
           fromDiscriminator: true,
+          singleAlert: snapshot.size === 1,
         };
       }
     }
@@ -443,6 +470,7 @@ export class AlpacaClient {
       doc: snapshot.size > 0 ? (snapshot.docs[0] as ReturnType) : null,
       snapshot: snapshot as FirebaseFirestore.QuerySnapshot<EntryPositionDoc>,
       fromDiscriminator: false,
+      singleAlert: snapshot.size === 1,
     };
   }
 
