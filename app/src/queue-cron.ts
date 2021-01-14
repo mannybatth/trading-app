@@ -1,6 +1,7 @@
 import schedule from 'node-schedule';
+import { secondaryTradingStrategy } from './core/secondary-trading-strategy';
+import { simpleTradingStrategy } from './core/simple-trading-strategy';
 import { db } from './firebase-admin';
-import { alpaca } from './libs/alpaca';
 import { colors } from './models/colors';
 import type { Alert } from './models/models';
 
@@ -21,10 +22,16 @@ schedule.scheduleJob(rule, async () => {
       symbol: data.symbol,
       price: data.price,
     };
+    const strategy = data.strategy || '0';
     const discriminator: string = data.discriminator;
     try {
       console.log(colors.fg.Magenta, 'Sending order from queue:', discriminator, alert);
-      await alpaca.sendOrder(alert, discriminator);
+
+      if (strategy === '0') {
+        await simpleTradingStrategy.sendOrder(alert, discriminator);
+      } else if (strategy === '1') {
+        await secondaryTradingStrategy.sendOrder(alert, discriminator);
+      }
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'Failed to send order in queue', alert, discriminator, error);

@@ -1,9 +1,10 @@
 import { ChatMessage } from '../models/models';
-import { containsXtradeIcon, waitForElementToBeVisible } from './helpers';
-import { parseAlert } from './signal-parser';
+import { waitForElementToBeVisible } from './helpers';
+import { parseAlert, parseXCaptureAlert } from './signal-parser';
 
 export class MessageQueue {
   public callback: (message: ChatMessage) => void;
+  private previousMessageText: string;
 
   public addTask = (() => {
     let pending: Promise<ChatMessage | null> = Promise.resolve(null);
@@ -12,13 +13,65 @@ export class MessageQueue {
       try {
         await pending;
       } finally {
-        return this.buildMessageFromNode(node);
+        return this.buildMessageFromXCaptureNode(node);
       }
     };
 
     // update pending promise so that next task could await for it
     return (node: HTMLElement) => (pending = run(node));
   })();
+
+  private async buildMessageFromXCaptureNode(
+    node: HTMLElement
+  ): Promise<ChatMessage | null> {
+    const embedWrapper: HTMLElement = node.querySelector(
+      '[class*="embedWrapper-"]'
+    );
+
+    if (!embedWrapper) {
+      const textDiv = node.querySelector('[class*="messageContent-"]');
+      textDiv?.querySelector('blockquote')?.remove();
+      this.previousMessageText = textDiv?.textContent;
+
+      return null;
+    }
+
+    const usernameSpan: HTMLElement = node.querySelector(
+      '[class*="username-"]'
+    );
+    const username = usernameSpan?.textContent;
+
+    if (username !== 'Xcapture') {
+      return null;
+    }
+
+    const embedLink: HTMLAnchorElement = embedWrapper.querySelector(
+      '[class*="embedAuthorNameLink-"]'
+    );
+    const userId = embedLink.href.replace(
+      'https://app.xtrades.net/#/profile/',
+      ''
+    );
+
+    const embedDescription = embedWrapper.querySelector(
+      '[class*="embedDescription-"]'
+    );
+    const text = embedDescription.textContent;
+    const alert = parseXCaptureAlert(text, this.previousMessageText);
+
+    const message: ChatMessage = {
+      username,
+      discriminator: userId,
+      text,
+      alert,
+      userRoles: [],
+      element: {
+        id: node.id,
+      },
+    };
+    this.callback(message);
+    return message;
+  }
 
   private async buildMessageFromNode(
     node: HTMLElement
@@ -67,7 +120,6 @@ export class MessageQueue {
       userRoles,
       element: {
         id: node.id,
-        hasXtradeIcon: containsXtradeIcon(node),
       },
     };
     this.callback(message);

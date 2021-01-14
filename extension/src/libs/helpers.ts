@@ -40,8 +40,3 @@ export function waitForElementToBeVisible(
     }
   });
 }
-
-export function containsXtradeIcon(node: HTMLElement): boolean {
-  const reactionsDiv = node.querySelector('[class*="reactions-"]');
-  return reactionsDiv?.querySelector('img[alt="Xtrades"]') ? true : false;
-}

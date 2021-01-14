@@ -9,7 +9,7 @@ const onNewMessage = (message: ChatMessage) => {
   }
 };
 
-const watcher = new MessageWatcher(onNewMessage, { waitForXtradeIcon: false });
+const watcher = new MessageWatcher(onNewMessage);
 
 try {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

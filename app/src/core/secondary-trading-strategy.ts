@@ -1,7 +1,4 @@
-import Alpaca from '@alpacahq/alpaca-trade-api';
 import {
-  alpacaApiKey,
-  alpacaApiSecret,
   expertMaxPositionSize,
   expertTraders,
   extendedHours,
@@ -11,6 +8,9 @@ import {
   stopLossPercent,
 } from '../constants';
 import { db, firebaseAdmin } from '../firebase-admin';
+import { alpacaPaper, alpacaPaperSocket } from '../libs/alpaca-paper-client';
+import { getQuote, isValidPrice } from '../libs/quote';
+import { isInRange, round, sleep } from '../libs/utils';
 import type {
   CreateOrderResponse,
   Order,
@@ -19,8 +19,6 @@ import type {
 } from '../models/alpaca-models';
 import { colors } from '../models/colors';
 import type { Alert, EntryPositionDoc } from '../models/models';
-import { getQuote, isValidPrice } from './quote';
-import { isInRange, round, sleep } from './utils';
 
 const calcProfitLoss = (price: number) => {
   return {
@@ -39,51 +37,13 @@ const calcQuantity = (price: number, discriminator: string) => {
   return Math.floor(max / price);
 };
 
-export class AlpacaClient {
-  public client: Alpaca;
-  public pendingAlerts = new Map<string, { alert: Alert; discriminator: string }>();
+export class SecondaryTradingStrategy {
+  private alpacaClient = alpacaPaper;
+  private alpacaSocket = alpacaPaperSocket;
+  private pendingAlerts = new Map<string, { alert: Alert; discriminator: string }>();
 
-  init() {
-    this.client = new Alpaca({
-      keyId: alpacaApiKey,
-      secretKey: alpacaApiSecret,
-      paper: true,
-      usePolygon: false,
-    });
-
-    const socket = this.client.trade_ws;
-    socket.onConnect(function () {
-      console.log('Connected to socket');
-      const trade_keys = ['trade_updates'];
-      socket.subscribe(trade_keys);
-    });
-    socket.onDisconnect(() => {
-      console.log(colors.fg.Red, 'Disconnected from socket');
-    });
-    socket.onStateChange((newState: string) => {
-      console.log(`State changed to ${newState}`);
-    });
-    socket.onOrderUpdate(async (message: OrderUpdateMessage) => {
-      console.log(
-        colors.fg.Cyan,
-        `Order update: ${JSON.stringify({
-          event: message.event,
-          side: message.order.side,
-          symbol: message.order.symbol,
-          filled_qty: message.order.filled_qty,
-          order_qty: message.order.qty,
-          order_type: message.order.order_type,
-          filled_avg_price: message.order.filled_avg_price,
-          limit_price: message.order.limit_price,
-          client_order_id: message.order.client_order_id,
-        })}`
-      );
-      // console.log(colors.fg.Cyan, `Order update: ${JSON.stringify(message, null, 2)}`);
-      // console.log(colors.fg.Cyan, 'Order update:', message);
-      // if (message.order.legs?.length > 0) {
-      //   console.log(colors.fg.Cyan, 'Order legs:', message.order.legs);
-      // }
-      console.log('');
+  constructor() {
+    this.alpacaSocket.onOrderUpdate.subscribe(async (message: OrderUpdateMessage) => {
       if (message?.event === 'fill') {
         const qty = parseFloat(message?.order?.filled_qty);
 
@@ -116,7 +76,6 @@ export class AlpacaClient {
         }
       }
     });
-    socket.connect();
   }
 
   async sendOrder(alert: Alert, discriminator: string): Promise<CreateOrderResponse> {
@@ -152,7 +111,7 @@ export class AlpacaClient {
     }
 
     const [validInfo, alertDoc] = await Promise.all([
-      isValidPrice(alert.symbol, alert.price, this.client),
+      isValidPrice(alert.symbol, alert.price, this.alpacaClient),
       db.doc(`alerts/${discriminator}-${alert.symbol}`).get(),
     ]);
 
@@ -219,7 +178,7 @@ export class AlpacaClient {
         calc.loss - validInfo.spread
       );
       const clientId = `${discriminator}-${alert.symbol}-${timeNow}`;
-      const order = await this.client.createOrder({
+      const order = await this.alpacaClient.createOrder({
         symbol: alert.symbol,
         qty: quantity,
         side: 'buy',
@@ -274,7 +233,7 @@ export class AlpacaClient {
       ] = await Promise.all([
         this.findEntryPosition(alert.symbol, discriminator),
         this.findStockPosition(alert.symbol),
-        this.client.getOrders({ limit: 500 }),
+        this.alpacaClient.getOrders({ limit: 500 }),
       ]);
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
@@ -310,7 +269,7 @@ export class AlpacaClient {
 
     let quote: { bid: number; ask: number };
     try {
-      quote = await getQuote(alert.symbol, this.client);
+      quote = await getQuote(alert.symbol, this.alpacaClient);
     } catch (err) {
       const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'ERROR getting quote for symbol:', alert.symbol, error);
@@ -390,7 +349,7 @@ export class AlpacaClient {
 
     const executeSellOrder = async () => {
       if (isMarketOpen) {
-        await this.client.createOrder({
+        await this.alpacaClient.createOrder({
           symbol: alert.symbol,
           qty: qty,
           side: 'sell',
@@ -398,7 +357,7 @@ export class AlpacaClient {
           time_in_force: 'day',
         });
       } else {
-        await this.client.createOrder({
+        await this.alpacaClient.createOrder({
           symbol: alert.symbol,
           qty: qty,
           side: 'sell',
@@ -476,7 +435,7 @@ export class AlpacaClient {
 
   async findStockPosition(symbol: string): Promise<StockPosition> {
     try {
-      return await this.client.getPosition(symbol);
+      return await this.alpacaClient.getPosition(symbol);
     } catch (err) {
       return Promise.resolve(null);
     }
@@ -493,14 +452,14 @@ export class AlpacaClient {
       );
       if (foundOrder) {
         console.log('cancelling order', foundOrder.id);
-        await this.client.cancelOrder(foundOrder.id);
+        await this.alpacaClient.cancelOrder(foundOrder.id);
       }
     } else {
       await Promise.all(
         orders.map((order) => {
           if (order.symbol === symbol) {
             console.log('cancelling order', order.id);
-            return this.client.cancelOrder(order.id);
+            return this.alpacaClient.cancelOrder(order.id);
           }
         })
       );
@@ -529,6 +488,7 @@ export class AlpacaClient {
       discriminator,
       quantity,
       created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+      strategy: '2',
     });
   }
 
@@ -542,4 +502,4 @@ export class AlpacaClient {
   }
 }
 
-export const alpaca = new AlpacaClient();
+export const secondaryTradingStrategy = new SecondaryTradingStrategy();

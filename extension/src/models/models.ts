@@ -6,7 +6,6 @@ export interface ChatMessage {
   userRoles: string[];
   element: {
     id: string;
-    hasXtradeIcon: boolean;
   };
 }
 
@@ -15,6 +14,7 @@ export interface Alert {
   symbol: string;
   price?: number | null;
   risky: boolean;
+  partial?: boolean;
   option?: {
     date: string;
     type: string; // call/put

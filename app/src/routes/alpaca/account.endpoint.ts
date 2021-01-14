@@ -1,9 +1,9 @@
 import send from '@polka/send-type';
-import { alpaca } from '../../libs/alpaca';
+import { alpacaPaper } from '../../libs/alpaca-paper-client';
 
 export async function get(req, res, next) {
   try {
-    const account = await alpaca.client.getAccount();
+    const account = await alpacaPaper.getAccount();
     send(res, 200, account);
   } catch (err) {
     send(res, 400, err);

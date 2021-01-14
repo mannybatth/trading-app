@@ -3,6 +3,7 @@ export interface Alert {
   symbol: string;
   price?: number | null;
   risky?: boolean;
+  partial?: boolean;
 }
 
 export interface EntryPosition {

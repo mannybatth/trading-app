@@ -1,10 +1,8 @@
 import { ChatMessage } from '../models/models';
-import { containsXtradeIcon, waitForElementToBeVisible } from './helpers';
+import { waitForElementToBeVisible } from './helpers';
 import { MessageQueue } from './message-queue';
 
 export interface MessageWatcherConfig {
-  waitForXtradeIcon?: boolean;
-  iconWaitTime?: number;
   onlyNewMessages?: boolean;
 }
 
@@ -19,20 +17,12 @@ export class MessageWatcher {
 
   constructor(
     public callback: (message: ChatMessage) => void,
-    {
-      waitForXtradeIcon = true,
-      iconWaitTime = 7000,
-      onlyNewMessages = true,
-    }: MessageWatcherConfig = {
-      waitForXtradeIcon: true,
-      iconWaitTime: 7000,
+    { onlyNewMessages = true }: MessageWatcherConfig = {
       onlyNewMessages: true,
     }
   ) {
     this.queue.callback = callback;
     this.config = {
-      waitForXtradeIcon,
-      iconWaitTime,
       onlyNewMessages,
     };
     this.start();
@@ -112,11 +102,7 @@ export class MessageWatcher {
 
           this.lastMessageId = messageId;
 
-          if (this.config.waitForXtradeIcon) {
-            this.watchMessageForXtradeIcon(node);
-          } else {
-            this.queue.addTask(node);
-          }
+          this.queue.addTask(node);
         });
       });
     });
@@ -125,20 +111,5 @@ export class MessageWatcher {
       childList: true,
       subtree: true,
     });
-  }
-
-  private async watchMessageForXtradeIcon(messageNode: HTMLElement) {
-    const foundNode = await waitForElementToBeVisible(
-      (node) => {
-        return containsXtradeIcon(messageNode);
-      },
-      messageNode,
-      true,
-      this.config.iconWaitTime
-    );
-
-    if (foundNode) {
-      this.queue.addTask(messageNode);
-    }
   }
 }

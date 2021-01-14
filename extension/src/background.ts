@@ -1,4 +1,3 @@
-import { allowedUserRoles } from './allowed-traders';
 import { RuntimeAlertMessage, RuntimeMessage } from './models/models';
 
 const API_URL = 'https://localhost:3000';
@@ -27,28 +26,28 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage<any>) => {
     //   return;
     // }
 
-    const userRoles = alertMessage.data?.userRoles;
-    if (!userRoles.some((role) => allowedUserRoles.includes(role))) {
-      return;
-    }
+    // const userRoles = alertMessage.data?.userRoles;
+    // if (!userRoles.some((role) => allowedUserRoles.includes(role))) {
+    //   return;
+    // }
 
-    if (allowedUserRoles)
-      if (alertMessage.data?.alert?.option) {
-        fetch(`${API_URL}/alert/option.endpoint`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(alertMessage.data),
-        });
-      } else {
-        fetch(`${API_URL}/alert.endpoint`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(alertMessage.data),
-        });
-      }
+    // if (allowedUserRoles)
+    if (alertMessage.data?.alert?.option) {
+      fetch(`${API_URL}/alert/option.endpoint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(alertMessage.data),
+      });
+    } else {
+      fetch(`${API_URL}/alert.endpoint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(alertMessage.data),
+      });
+    }
   }
 });

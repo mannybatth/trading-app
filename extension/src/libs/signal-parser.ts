@@ -1,64 +1,5 @@
 import { Alert } from '../models/models';
 
-// const actions = ['BTO', 'STC', 'STO', 'BTC'];
-// export const parseStockAlert = (alertText: string): Alert | null => {
-//   // remove double spaces
-//   const text = alertText
-//     ?.trim()
-//     ?.replace(/ +(?= )/g, '')
-//     ?.toLowerCase();
-//   if (!text) {
-//     return null;
-//   }
-
-//   const splits = text.split(' ').filter((x) => x);
-//   const risky = text.includes('risk') || text.includes('lotto');
-//   const startPos = splits.findIndex((val) =>
-//     actions.includes(val.toUpperCase())
-//   );
-//   if (startPos >= 0) {
-//     const action = splits[startPos]?.toUpperCase();
-//     let symbol = splits[startPos + 1]?.toUpperCase();
-//     let priceStr: string | null = null;
-//     if (splits[startPos + 2] === '@') {
-//       priceStr = splits[startPos + 3]?.replace('$', '');
-//     } else {
-//       if (symbol.includes('@')) {
-//         const symbolSplits = symbol.split('@');
-//         if (!symbolSplits[0]) {
-//           return null;
-//         }
-//         symbol = symbolSplits[0];
-//         if (!symbolSplits[1]) {
-//           priceStr = splits[startPos + 2]?.replace('$', '');
-//         } else {
-//           priceStr = symbolSplits[1]?.replace('$', '');
-//         }
-//       } else {
-//         priceStr = splits[startPos + 2]?.replace('$', '')?.replace('@', '');
-//       }
-//     }
-
-//     const price = (priceStr && parseFloat(priceStr)) || null;
-//     if (price) {
-//       return {
-//         action,
-//         symbol,
-//         price,
-//         risky,
-//       };
-//     } else if (action === 'STC' || action === 'BTC') {
-//       return {
-//         action,
-//         symbol,
-//         price: null,
-//         risky,
-//       };
-//     }
-//   }
-//   return null;
-// };
-
 const parseNakedCloseAlert = (text: string): Alert | null => {
   const resultOne = text?.match(/(STC|BTC)\s+([A-Z]+)\b/i)?.filter((x) => x);
 
@@ -217,4 +158,79 @@ const removeWords = (text: string) => {
   return text
     .replace(new RegExp('\\b(' + expStr + ')\\b', 'gi'), ' ')
     .replace(/\s{2,}/g, ' ');
+};
+
+/**
+
+ Long: XL @ 21.85  |  current : $21.93
+Partial exit accepted @ $2.42
+Closed long: ED @ 67.25 | current : $67.29
+Short: BIOL @ 0.97 | current : $0.953
+Closed short: BIOL @ 0.881 | current : $0.9172
+
+ */
+export const parseXCaptureAlert = (
+  alertText: string,
+  previousMsgText: string
+): Alert | null => {
+  const text = alertText
+    ?.trim()
+    ?.replace(/ +(?= )|\$/g, '') // remove double spaces and dollar signs
+    ?.toUpperCase();
+
+  const resultOne = text
+    ?.match(
+      /(LONG|PARTIAL EXIT ACCEPTED|CLOSED LONG|SHORT|CLOSED SHORT)\:?\s([A-Z]+)?\s?@\s(\d+\b(?:\.\d+\b)?|\.\d+\b)/i
+    )
+    ?.filter((x) => x);
+
+  if (!resultOne || resultOne.length < 3) {
+    return null;
+  }
+
+  resultOne.shift();
+
+  let action: string;
+  let symbol: string;
+  let price: number;
+  let partial = false;
+  switch (resultOne[0]) {
+    case 'LONG':
+      action = 'BTO';
+      symbol = resultOne[1];
+      price = +resultOne[2];
+      break;
+    case 'PARTIAL EXIT ACCEPTED':
+      const parsedAlert = parseAlert(previousMsgText);
+      action = parsedAlert.action;
+      symbol = parsedAlert.symbol;
+      price = parsedAlert.price;
+      partial = true;
+      break;
+    case 'CLOSED LONG':
+      action = 'STC';
+      symbol = resultOne[1];
+      price = +resultOne[2];
+      break;
+    case 'SHORT':
+      action = 'STO';
+      symbol = resultOne[1];
+      price = +resultOne[2];
+      break;
+    case 'CLOSED SHORT':
+      action = 'BTC';
+      symbol = resultOne[1];
+      price = +resultOne[2];
+      break;
+  }
+
+  const alert: Alert = {
+    action: action,
+    symbol: symbol,
+    price: price,
+    risky: false,
+    partial,
+  };
+
+  return alert;
 };
