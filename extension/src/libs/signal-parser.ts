@@ -156,8 +156,8 @@ const removeWordsList = [
 const removeWords = (text: string) => {
   const expStr = removeWordsList.join('|');
   return text
-    .replace(new RegExp('\\b(' + expStr + ')\\b', 'gi'), ' ')
-    .replace(/\s{2,}/g, ' ');
+    ?.replace(new RegExp('\\b(' + expStr + ')\\b', 'gi'), ' ')
+    ?.replace(/\s{2,}/g, ' ');
 };
 
 /**
@@ -167,6 +167,7 @@ Partial exit accepted @ $2.42
 Closed long: ED @ 67.25 | current : $67.29
 Short: BIOL @ 0.97 | current : $0.953
 Closed short: BIOL @ 0.881 | current : $0.9172
+Average accepted @ $23.53
 
  */
 export const parseXCaptureAlert = (
@@ -180,7 +181,7 @@ export const parseXCaptureAlert = (
 
   const resultOne = text
     ?.match(
-      /(LONG|PARTIAL EXIT ACCEPTED|CLOSED LONG|SHORT|CLOSED SHORT)\:?\s([A-Z]+)?\s?@\s(\d+\b(?:\.\d+\b)?|\.\d+\b)/i
+      /(LONG|PARTIAL EXIT ACCEPTED|AVERAGE ACCEPTED|CLOSED LONG|SHORT|CLOSED SHORT|)\:?\s([A-Z]+)?\s?@\s(\d+\b(?:\.\d+\b)?|\.\d+\b)/i
     )
     ?.filter((x) => x);
 
@@ -194,34 +195,35 @@ export const parseXCaptureAlert = (
   let symbol: string;
   let price: number;
   let partial = false;
-  switch (resultOne[0]) {
-    case 'LONG':
-      action = 'BTO';
-      symbol = resultOne[1];
-      price = +resultOne[2];
-      break;
-    case 'PARTIAL EXIT ACCEPTED':
-      const parsedAlert = parseAlert(previousMsgText);
-      action = parsedAlert.action;
-      symbol = parsedAlert.symbol;
-      price = parsedAlert.price;
-      partial = true;
-      break;
-    case 'CLOSED LONG':
-      action = 'STC';
-      symbol = resultOne[1];
-      price = +resultOne[2];
-      break;
-    case 'SHORT':
-      action = 'STO';
-      symbol = resultOne[1];
-      price = +resultOne[2];
-      break;
-    case 'CLOSED SHORT':
-      action = 'BTC';
-      symbol = resultOne[1];
-      price = +resultOne[2];
-      break;
+  const type = resultOne[0];
+
+  if (type === 'LONG') {
+    action = 'BTO';
+    symbol = resultOne[1];
+    price = +resultOne[2];
+  } else if (type === 'PARTIAL EXIT ACCEPTED') {
+    const parsedAlert = parseAlert(previousMsgText);
+    action = parsedAlert.action;
+    symbol = parsedAlert.symbol;
+    price = parsedAlert.price;
+    partial = true;
+  } else if (type === 'AVERAGE ACCEPTED') {
+    const parsedAlert = parseAlert(previousMsgText);
+    action = parsedAlert.action;
+    symbol = parsedAlert.symbol;
+    price = parsedAlert.price;
+  } else if (type === 'CLOSED LONG') {
+    action = 'STC';
+    symbol = resultOne[1];
+    price = +resultOne[2];
+  } else if (type === 'SHORT') {
+    action = 'STO';
+    symbol = resultOne[1];
+    price = +resultOne[2];
+  } else if (type === 'CLOSED SHORT') {
+    action = 'BTC';
+    symbol = resultOne[1];
+    price = +resultOne[2];
   }
 
   const alert: Alert = {

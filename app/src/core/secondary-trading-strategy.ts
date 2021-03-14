@@ -488,7 +488,7 @@ export class SecondaryTradingStrategy {
       discriminator,
       quantity,
       created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
-      strategy: '2',
+      strategy: '1',
     });
   }
 

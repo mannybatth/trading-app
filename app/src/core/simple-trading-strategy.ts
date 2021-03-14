@@ -1,4 +1,4 @@
-import { expertMaxPositionSize, extendedHours } from '../constants';
+import { extendedHours } from '../constants';
 import { db, firebaseAdmin } from '../firebase-admin';
 import { alpacaPaper } from '../libs/alpaca-paper-client';
 import { getQuote } from '../libs/quote';
@@ -7,8 +7,10 @@ import type { Clock, CreateOrderResponse, Order, StockPosition } from '../models
 import { colors } from '../models/colors';
 import type { Alert } from '../models/models';
 
+const maxPositionSize = 2000;
+
 const calcQuantity = (price: number) => {
-  const max = expertMaxPositionSize;
+  const max = maxPositionSize;
   if (price >= max) {
     return 1;
   }
@@ -120,14 +122,12 @@ export class SimpleTradingStrategy {
       const error = err?.error?.message || err?.message || err;
       console.log(colors.fg.Red, 'ERROR getting quote for symbol:', alert.symbol, error);
 
-      if (!clock.is_open) {
-        // queue up this sell order
-        this.addToQueue(alert, discriminator, qty);
-        return {
-          ok: true,
-          addedToQueue: true,
-        };
-      }
+      // queue up this sell order
+      this.addToQueue(alert, discriminator, qty);
+      return {
+        ok: true,
+        addedToQueue: true,
+      };
     }
 
     console.log('isExtendedHours', isExtendedHours);
@@ -237,7 +237,7 @@ export class SimpleTradingStrategy {
       discriminator,
       quantity,
       created: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
-      strategy: '1',
+      strategy: '0',
     });
   }
 

@@ -5,7 +5,7 @@ import fs from 'fs';
 import https from 'https';
 import polka from 'polka';
 import sirv from 'sirv';
-import { secondaryTradingStrategy } from './core/secondary-trading-strategy';
+// import { secondaryTradingStrategy } from './core/secondary-trading-strategy';
 import { simpleTradingStrategy } from './core/simple-trading-strategy';
 import './queue-cron';
 
@@ -14,7 +14,7 @@ const dev = NODE_ENV === 'development';
 
 // init classes
 simpleTradingStrategy;
-secondaryTradingStrategy;
+// secondaryTradingStrategy;
 
 const httpsServer = https.createServer({
   key: fs.readFileSync('localhost+3-key.pem'),

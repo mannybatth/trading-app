@@ -1,11 +1,11 @@
 export const API_URL = 'https://localhost:3000';
-export const maxPositionSize = 1000 * 3;
-export const expertMaxPositionSize = 1000 * 3;
+export const maxPositionSize = 1000 * 2;
+export const expertMaxPositionSize = 1000 * 2;
 export const profitPercent = 0.3;
 export const stopLossPercent = 0.22;
 
-export const alpacaApiKey = 'PK25H6GQ93IL5SNREOJE';
-export const alpacaApiSecret = 'zikZmTjbw6AZkWG4IS6jCSQJd4NDEoQDaAH4DNtk';
+export const alpacaApiKey = 'PK69ZGJQ36J2J0LM7CSU';
+export const alpacaApiSecret = 'Y7uMHIh6UOSJqWgH6gEIn5acsSjCGHxs8Y6Di9UH';
 
 export const extendedHours = [
   ['9:00', '9:30'],

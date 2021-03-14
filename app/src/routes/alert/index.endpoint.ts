@@ -1,5 +1,5 @@
 import send from '@polka/send-type';
-import { secondaryTradingStrategy } from '../../core/secondary-trading-strategy';
+// import { secondaryTradingStrategy } from '../../core/secondary-trading-strategy';
 import { simpleTradingStrategy } from '../../core/simple-trading-strategy';
 import type { CreateOrderResponse } from '../../models/alpaca-models';
 import { colors } from '../../models/colors';
@@ -23,7 +23,7 @@ export async function post(req, res, next) {
   if (strategy === '0') {
     result = await simpleTradingStrategy.sendOrder(alert, discriminator);
   } else if (strategy === '1') {
-    result = await secondaryTradingStrategy.sendOrder(alert, discriminator);
+    // result = await secondaryTradingStrategy.sendOrder(alert, discriminator);
   }
 
   console.log('');

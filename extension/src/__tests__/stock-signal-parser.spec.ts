@@ -335,6 +335,15 @@ const tests: AlertTest[] = [
       risky: false,
     },
   },
+  {
+    test: 'BTO SOL @ 15.96 avg 18.37 - accumulating more in this long-term swing.',
+    expected: {
+      action: 'BTO',
+      symbol: 'SOL',
+      price: 15.96,
+      risky: false,
+    },
+  }
 ];
 
 tests.map((alertTest) => {

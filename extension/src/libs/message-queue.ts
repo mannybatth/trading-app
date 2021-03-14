@@ -28,20 +28,16 @@ export class MessageQueue {
       '[class*="embedWrapper-"]'
     );
 
-    if (!embedWrapper) {
-      const textDiv = node.querySelector('[class*="messageContent-"]');
-      textDiv?.querySelector('blockquote')?.remove();
-      this.previousMessageText = textDiv?.textContent;
-
-      return null;
-    }
-
     const usernameSpan: HTMLElement = node.querySelector(
       '[class*="username-"]'
     );
     const username = usernameSpan?.textContent;
 
     if (username !== 'Xcapture') {
+      const textDiv = node.querySelector('[class*="messageContent-"]');
+      textDiv?.querySelector('blockquote')?.remove();
+      this.previousMessageText = textDiv?.textContent;
+
       return null;
     }
 
